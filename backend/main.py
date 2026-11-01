@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -56,8 +57,8 @@ def status():
 
 @app.get("/vault/start")
 def vault_start():
-    return RedirectResponse(paypal.start_vault(
-        "http://localhost:8000/vault/return", "http://localhost:8000/"))
+    base = os.getenv("PUBLIC_URL", "http://localhost:8000").rstrip("/")
+    return RedirectResponse(paypal.start_vault(f"{base}/vault/return", f"{base}/"))
 
 
 @app.get("/vault/return")
