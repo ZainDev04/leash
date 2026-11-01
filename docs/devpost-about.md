@@ -38,7 +38,7 @@ We built the riskiest part first: a small script that saved a sandbox PayPal acc
 
 ## Challenges we ran into
 
-- PayPal is not available in Pakistan, where we live. The PayPal app would not install, and we could not open a developer account. We asked in the PayPal Developer Discord, and they advised teaming up with someone in a country where PayPal works. A friend abroad made the account so we could use the sandbox.
+- PayPal is not available in Pakistan, where we live. The PayPal app would not install, and we could not open a developer account ourselves. We asked in the PayPal Developer Discord, and their advice was to work with someone in a country where PayPal is available. We used a developer account from a friend abroad to get sandbox access.
 - Vault orders behave differently. An order created from a saved `vault_id` with intent `AUTHORIZE` comes back already authorized. Our first script tried to authorize it again and got `ORDER_ALREADY_AUTHORIZED`. Now Leash reads the authorization straight from the create response.
 - AI speed. The first Gemini model we tried took more than 60 seconds to answer, so every payment timed out. The good news is that Leash blocked all of them, which is what it should do when the AI fails. We timed several models and switched to one that answers in about 2 seconds.
 - Deciding what the AI is allowed to do. It was tempting to let the model decide everything. We kept the hard limits in normal code, because a limit should never depend on how a model reads a prompt.
