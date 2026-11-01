@@ -80,8 +80,10 @@ def setup():
     print("\nThen run: python docs/spikes/vault_spike.py finish")
 
 
-def authorize_and_settle(order_id, settle):
-    order = call("POST", f"/v2/checkout/orders/{order_id}/authorize")
+def authorize_and_settle(order_id, settle, order=None):
+    # Orders paid from a vault_id come back already authorized (status COMPLETED)
+    if not order or order["status"] != "COMPLETED":
+        order = call("POST", f"/v2/checkout/orders/{order_id}/authorize")
     auth = order["purchase_units"][0]["payments"]["authorizations"][0]
     print("authorization", auth["id"], auth["status"])
     if settle == "capture":
@@ -114,7 +116,7 @@ def pay_from_vault(settle):
         "payment_source": {"paypal": {"vault_id": vault_id}},
     })
     print("order", order["id"], order["status"])
-    authorize_and_settle(order["id"], settle)
+    authorize_and_settle(order["id"], settle, order)
     print("\nNo buyer click needed. Step 4 works." if settle == "capture" else "\nVoid works.")
 
 
