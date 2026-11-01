@@ -3,22 +3,26 @@ import os
 
 import httpx
 
-MODEL = os.getenv("LLM_MODEL", "gemini-3.5-flash")
-URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
+# Each Gemini model has its own free-tier quota, so a busy or exhausted model falls back to the next one
+MODELS = [m.strip() for m in os.getenv("LLM_MODEL", "gemini-3.5-flash,gemini-3.1-flash-lite").split(",") if m.strip()]
+URL = "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent"
 
 
 def _ask(prompt, schema):
-    r = httpx.post(
-        URL,
-        headers={"x-goog-api-key": os.environ["LLM_API_KEY"]},
-        json={
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"responseMimeType": "application/json", "responseSchema": schema, "temperature": 0},
-        },
-        timeout=60,
-    )
-    r.raise_for_status()
-    return json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
+    for i, model in enumerate(MODELS):
+        r = httpx.post(
+            URL.format(model),
+            headers={"x-goog-api-key": os.environ["LLM_API_KEY"]},
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"responseMimeType": "application/json", "responseSchema": schema, "temperature": 0},
+            },
+            timeout=60,
+        )
+        if r.status_code in (429, 500, 503) and i < len(MODELS) - 1:
+            continue
+        r.raise_for_status()
+        return json.loads(r.json()["candidates"][0]["content"]["parts"][0]["text"])
 
 
 CHECK_SCHEMA = {

@@ -118,7 +118,11 @@ def pay(body: PayRequest):
     try:
         verdict = ai.check_payment(req)
     except Exception as e:
-        verdict = {"verdict": "block", "reason": f"AI check failed, so Leash blocked it to be safe ({type(e).__name__})."}
+        verdict = {"verdict": "block", "hidden_instructions": True,
+                   "reason": f"AI check failed, so Leash blocked it to be safe ({type(e).__name__})."}
+    # The AI blocks outright only for manipulation; anything else it dislikes goes to the user
+    if verdict["verdict"] == "block" and not verdict.get("hidden_instructions"):
+        verdict["verdict"] = "ask"
     if verdict["verdict"] != "ok":
         reasons.append("AI: " + verdict["reason"])
     elif reasons:
