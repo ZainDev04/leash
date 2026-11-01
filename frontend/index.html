@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leash</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #ffffff; --ink: #1d1d1b; --muted: #6b6a64; --line: #e3e1da;
+    --brand: #1f4d3a; --brand-ink: #ffffff;
+    --paid: #1f7a4d; --waiting: #a86400; --blocked: #b3261e; --cancelled: #6b6a64;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151614; --card: #1e201d; --ink: #ecebe6; --muted: #9d9c95; --line: #33352f;
+      --brand: #7cc4a0; --brand-ink: #10231a;
+      --paid: #6fcf97; --waiting: #f2b84b; --blocked: #ff8a80; --cancelled: #9d9c95;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 26px; margin: 0; letter-spacing: -0.5px; }
+  h1 span { color: var(--muted); font-weight: 400; font-size: 15px; margin-left: 8px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-top: 16px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .stat { flex: 1 1 160px; }
+  .stat b { display: block; font-size: 20px; }
+  .stat small { color: var(--muted); }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+           padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+  button.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+  button.danger { color: var(--blocked); border-color: var(--blocked); }
+  button:disabled { opacity: .5; cursor: wait; }
+  textarea { width: 100%; min-height: 80px; font: inherit; padding: 10px; border-radius: 8px;
+             border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  .muted { color: var(--muted); }
+  .draft { margin-top: 12px; padding: 12px; border-radius: 8px; background: var(--bg); }
+  ul.rules { margin: 6px 0 0; padding-left: 18px; }
+  .pay { border-top: 1px solid var(--line); padding: 12px 0; }
+  .pay:first-child { border-top: 0; padding-top: 0; }
+  .pay-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .pill { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 99px; border: 1px solid currentColor; }
+  .paid { color: var(--paid); } .waiting { color: var(--waiting); }
+  .blocked { color: var(--blocked); } .cancelled, .checking { color: var(--cancelled); }
+  .reasons { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+  .frozen-banner { background: var(--blocked); color: #fff; padding: 10px 14px; border-radius: 8px; margin-top: 16px; display: none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Leash <span>your agents pay only inside your rules</span></h1>
+    <button id="freeze" class="danger">Freeze all agent payments</button>
+  </header>
+  <div class="frozen-banner" id="frozen-banner">All agent payments are frozen. Nothing will be paid until you unfreeze.</div>
+
+  <section>
+    <div class="row">
+      <div class="stat"><small>PayPal</small><b id="vault">...</b></div>
+      <div class="stat"><small>Spent this month</small><b id="spent">...</b></div>
+      <div class="stat"><small>Ask me above</small><b id="ask">...</b></div>
+      <div class="stat"><small>Per payment limit</small><b id="limit">...</b></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <a href="/vault/start"><button class="primary" id="vault-btn">Save my PayPal for agents</button></a>
+      <span class="muted">You approve once in PayPal. A $1 check is placed and released right away.</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Your rules</h2>
+    <ul class="rules" id="rules"></ul>
+    <p class="muted" style="margin:14px 0 6px">Change them in plain English:</p>
+    <textarea id="rules-text" placeholder="Example: Never spend more than $80 at once. Ask me for anything over $40. Only books and groceries. Never buy from QuickGiftCards."></textarea>
+    <div class="row" style="margin-top:8px">
+      <button id="parse" class="primary">Read my rules</button>
+    </div>
+    <div class="draft" id="draft" hidden>
+      <b>Leash understood:</b>
+      <p id="draft-summary" style="margin:6px 0"></p>
+      <ul class="rules" id="draft-rules"></ul>
+      <div class="row" style="margin-top:10px">
+        <button id="confirm" class="primary">Yes, use these rules</button>
+        <button id="discard">No, discard</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Agent payments</h2>
+    <div id="payments" class="muted">No payments yet.</div>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => "$" + Number(n).toFixed(2);
+let draft = null, frozen = false;
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText);
+  return r.json();
+}
+
+function ruleList(p) {
+  const list = (a, none) => a && a.length ? a.map(esc).join(", ") : none;
+  return [
+    `Up to ${money(p.per_payment_limit)} per payment`,
+    `Ask me first above ${money(p.ask_above)}`,
+    `Monthly budget ${money(p.monthly_budget)}`,
+    `Categories: ${list(p.allowed_categories, "none")}`,
+    `Stores: ${list(p.allowed_merchants, "any store not blocked")}`,
+    `Blocked stores: ${list(p.blocked_merchants, "none")}`,
+  ].map(t => `<li>${t}</li>`).join("");
+}
+
+async function loadStatus() {
+  const s = await api("/status");
+  frozen = s.frozen;
+  $("vault").textContent = s.vault_saved ? "Saved" : "Not saved";
+  $("vault-btn").textContent = s.vault_saved ? "Save a different PayPal" : "Save my PayPal for agents";
+  $("spent").textContent = `${money(s.spent_this_month)} of ${money(s.policy.monthly_budget)}`;
+  $("ask").textContent = money(s.policy.ask_above);
+  $("limit").textContent = money(s.policy.per_payment_limit);
+  $("rules").innerHTML = ruleList(s.policy);
+  $("freeze").textContent = frozen ? "Unfreeze agent payments" : "Freeze all agent payments";
+  $("frozen-banner").style.display = frozen ? "block" : "none";
+}
+
+async function loadPayments() {
+  const list = await api("/payments");
+  if (!list.length) return;
+  $("payments").classList.remove("muted");
+  $("payments").innerHTML = list.map(p => `
+    <div class="pay">
+      <div class="pay-top">
+        <div><b>${esc(p.item)}</b> at ${esc(p.merchant)} &middot; ${money(p.amount)}
+          <div class="muted">#${p.id} by ${esc(p.agent)} &middot; task: ${esc(p.task)}</div></div>
+        <div><span class="pill ${esc(p.status)}">${esc(p.status)}</span></div>
+      </div>
+      <ul class="reasons">${p.reasons.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+      ${p.status === "waiting" ? `<div class="row" style="margin-top:8px">
+        <button class="primary" onclick="decide(${p.id}, 'approve', this)">Approve and pay</button>
+        <button onclick="decide(${p.id}, 'reject', this)">Reject</button></div>` : ""}
+    </div>`).join("");
+}
+
+async function decide(id, action, btn) {
+  btn.disabled = true;
+  try { await api(`/payments/${id}/${action}`, { method: "POST" }); }
+  catch (e) { alert(e.message); }
+  refresh();
+}
+
+$("freeze").onclick = async () => { await api(frozen ? "/unfreeze" : "/freeze", { method: "POST" }); refresh(); };
+
+$("parse").onclick = async () => {
+  const text = $("rules-text").value.trim();
+  if (!text) return;
+  $("parse").disabled = true;
+  try {
+    draft = await api("/policy/parse", { method: "POST", body: JSON.stringify({ text }) });
+    $("draft-summary").textContent = draft.summary;
+    $("draft-rules").innerHTML = ruleList(draft);
+    $("draft").hidden = false;
+  } catch (e) { alert("Could not read the rules: " + e.message); }
+  $("parse").disabled = false;
+};
+$("confirm").onclick = async () => {
+  await api("/policy", { method: "PUT", body: JSON.stringify(draft) });
+  $("draft").hidden = true; $("rules-text").value = ""; refresh();
+};
+$("discard").onclick = () => { $("draft").hidden = true; draft = null; };
+
+function refresh() { loadStatus(); loadPayments(); }
+refresh();
+setInterval(loadPayments, 3000);
+</script>
+</body>
+</html>
