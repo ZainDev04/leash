@@ -10,10 +10,11 @@
 <style>
   :root {
     /* Foundations from the reference guide */
-    --surface-base: #000000; --surface-raised: #161619; --surface-muted: #222327;
-    --text-primary: #ffffff; --text-secondary: #a1a1aa; --text-tertiary: #6b6b74; --line: rgba(255,255,255,.08); --line-strong: rgba(255,255,255,.16);
-    --invert-bg: #ffffff; --invert-fg: #000000;
-    --paid: #3ddc97; --wait: #ffb340; --stop: #ff5a5f;
+    --surface-base: #0b0b0c; --surface-raised: #141416; --surface-muted: #1e1e21;
+    --text-primary: #ecebe8; --text-secondary: #9d9ca1; --text-tertiary: #67666c; --line: rgba(255,255,255,.07); --line-strong: rgba(255,255,255,.14);
+    --invert-bg: #ecebe8; --invert-fg: #0b0b0c;
+    --accent: #d6c3a1;
+    --paid: #8fc9a6; --wait: #dcb36e; --stop: #e07b74;
     --shadow-1: rgba(0,0,0,.3) 15px 15px 50px 0px;
     --fs-xs: 13px; --fs-sm: 16px; --fs-md: 17px; --fs-lg: 19px; --fs-xl: 20px; --fs-2xl: 24px; --fs-3xl: 26px; --fs-4xl: 38.4px;
     --s1: 3px; --s2: 5px; --s3: 8px; --s4: 10px; --s5: 20px; --s6: 30px; --s7: 35px; --s8: 40px;
@@ -25,7 +26,7 @@
     --surface-base: #ffffff; --surface-raised: #f4f4f6; --surface-muted: #e9e9ee;
     --text-primary: #212529; --text-secondary: #55595f; --text-tertiary: #868a91; --line: rgba(0,0,0,.08); --line-strong: rgba(0,0,0,.16);
     --invert-bg: #000000; --invert-fg: #ffffff;
-    --paid: #12865a; --wait: #b86e00; --stop: #d42f3a;
+    --paid: #12865a; --wait: #b86e00; --stop: #d42f3a; --accent: #8a6d3b;
     --shadow-1: rgba(0,0,0,.08) 15px 15px 50px 0px;
     color-scheme: light;
   }
@@ -34,7 +35,7 @@
       --surface-base: #ffffff; --surface-raised: #f4f4f6; --surface-muted: #e9e9ee;
       --text-primary: #212529; --text-secondary: #55595f; --text-tertiary: #868a91; --line: rgba(0,0,0,.08); --line-strong: rgba(0,0,0,.16);
       --invert-bg: #000000; --invert-fg: #ffffff;
-      --paid: #12865a; --wait: #b86e00; --stop: #d42f3a;
+      --paid: #12865a; --wait: #b86e00; --stop: #d42f3a; --accent: #8a6d3b;
       --shadow-1: rgba(0,0,0,.08) 15px 15px 50px 0px;
       color-scheme: light;
     }
@@ -42,6 +43,8 @@
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+                 background: radial-gradient(1100px 600px at 75% -10%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 70%); }
   body { margin: 0; background: var(--surface-base); color: var(--text-primary); font: 400 var(--fs-sm)/24px "Poppins", sans-serif;
          -webkit-font-smoothing: antialiased; transition: background-color var(--t-normal), color var(--t-normal); overflow-x: hidden; }
   .wrap { max-width: 1240px; margin: 0 auto; padding: 0 var(--s8); }
@@ -56,7 +59,7 @@
            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
   header .wrap { display: flex; align-items: center; gap: var(--s6); height: 80px; }
   .logo { font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -.03em; text-decoration: none; }
-  .logo span { color: var(--paid); }
+  .logo span { color: var(--accent); }
   .nav-links { display: flex; gap: var(--s6); }
   .nav-links a { text-decoration: none; font-size: var(--fs-sm); font-weight: 500; color: var(--text-secondary); transition: color var(--t-instant); padding: var(--s3) 0; }
   .nav-links a:hover { color: var(--text-primary); }
@@ -79,7 +82,7 @@
 
   /* Hero */
   .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; padding: 90px 0 70px; }
-  h1 { font-size: clamp(42px, 5vw, 74px); line-height: 1.02; letter-spacing: -.045em; font-weight: 700; margin: var(--s5) 0 var(--s6); }
+  h1 { font-size: clamp(40px, 4.3vw, 66px); line-height: 1.02; letter-spacing: -.045em; font-weight: 700; margin: var(--s5) 0 var(--s6); }
   h1 em { font-style: normal; font-weight: 300; color: var(--text-secondary); }
   .lede { font-size: var(--fs-md); line-height: 30px; color: var(--text-secondary); max-width: 500px; margin: 0 0 var(--s8); }
   .ctas { display: flex; gap: var(--s4); flex-wrap: wrap; }
@@ -90,7 +93,7 @@
   .btn:active { transform: translateY(0) scale(.98); }
   .btn.solid { background: var(--invert-bg); color: var(--invert-fg); border-color: var(--invert-bg); }
   .btn.solid:hover { box-shadow: var(--shadow-1); }
-  .btn.go { background: var(--paid); border-color: var(--paid); color: #04130c; }
+  .btn.go { background: var(--accent); border-color: var(--accent); color: #17130c; }
   .btn.sm { min-height: 44px; padding: 0 var(--s5); font-size: var(--fs-xs); }
   .btn:disabled { opacity: .5; cursor: progress; transform: none; }
   .btn .arr { transition: transform var(--t-fast); } .btn:hover .arr { transform: translateX(4px); }
@@ -101,7 +104,7 @@
                 transform: rotateX(var(--rx, 8deg)) rotateY(var(--ry, -16deg)); transition: transform var(--t-normal) var(--ease), box-shadow var(--t-normal);
                 background:
                   radial-gradient(120% 140% at 0% 0%, #3a3b42 0%, #17171b 45%, #050506 100%);
-                box-shadow: 0 50px 80px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.08) inset, 0 1px 0 rgba(255,255,255,.25) inset;
+                box-shadow: 0 50px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(214,195,161,.22) inset, 0 1px 0 rgba(255,255,255,.3) inset, 0 0 90px -30px rgba(214,195,161,.25);
                 color: #f4f4f6; animation: float 6s ease-in-out infinite; }
   @keyframes float { 50% { translate: 0 -12px; } }
   .agent-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
@@ -117,7 +120,7 @@
   .ac-in { position: absolute; inset: 0; padding: 28px 30px; display: flex; flex-direction: column; transform: translateZ(40px); }
   .ac-row { display: flex; justify-content: space-between; align-items: center; }
   .ac-brand { font-weight: 700; font-size: var(--fs-2xl); letter-spacing: -.03em; }
-  .ac-brand span { color: #3ddc97; }
+  .ac-brand span { color: #d6c3a1; }
   .ac-tag { font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #9a9aa3; }
   .chip { width: 52px; height: 40px; border-radius: 9px; margin-top: 26px;
           background: linear-gradient(135deg, #e9d9a6, #b89a52 40%, #f3e6bd 60%, #a7883f); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); position: relative; overflow: hidden; }
@@ -134,7 +137,7 @@
   .stat { padding: var(--s8) var(--s6); border-left: 1px solid var(--line); }
   .stat:first-child { border-left: 0; padding-left: 0; }
   .stat b { display: block; font-size: var(--fs-4xl); font-weight: 600; letter-spacing: -.03em; line-height: 1.2; margin-top: var(--s3); }
-  .stat .paid { color: var(--paid); } .stat .wait { color: var(--wait); } .stat .stop { color: var(--stop); }
+  .stat .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
   .meter { height: 4px; border-radius: 4px; background: var(--surface-muted); margin-top: var(--s4); overflow: hidden; }
   .meter i { display: block; height: 100%; width: 0; background: var(--text-primary); border-radius: 4px; transition: width 1.2s var(--ease), background var(--t-fast); }
 
@@ -159,7 +162,7 @@
   .pay { background: var(--surface-raised); border-radius: var(--radius); padding: var(--s6); margin-bottom: var(--s5); position: relative;
          transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast); }
   .pay:hover { transform: translateY(-3px); box-shadow: var(--shadow-1); }
-  .pay.waiting { box-shadow: 0 0 0 1.5px var(--wait); }
+  .pay.waiting { box-shadow: 0 0 0 1px color-mix(in srgb, var(--wait) 70%, transparent); }
   .pay.enter { animation: rise var(--t-normal) var(--ease) both; }
   @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
   .pay-head { display: flex; justify-content: space-between; gap: var(--s5); align-items: flex-start; }
@@ -167,7 +170,7 @@
   .pay-meta { font-size: var(--fs-xs); color: var(--text-tertiary); margin-top: var(--s1); }
   .pay-amt { font-size: var(--fs-3xl); font-weight: 600; letter-spacing: -.02em; text-align: right; }
   .badge { display: inline-block; margin-top: var(--s3); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: var(--s1) var(--s4); border-radius: 99px; }
-  .badge.paid { color: var(--paid); background: color-mix(in srgb, var(--paid) 14%, transparent); }
+  .badge.paid { color: var(--paid); background: color-mix(in srgb, var(--paid) 11%, transparent); }
   .badge.waiting { color: var(--wait); background: color-mix(in srgb, var(--wait) 14%, transparent); }
   .badge.blocked, .badge.cancelled { color: var(--stop); background: color-mix(in srgb, var(--stop) 14%, transparent); }
   .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); margin: var(--s5) 0; }
@@ -182,7 +185,7 @@
   .why { margin-top: 38px; display: grid; gap: var(--s3); }
   .why div { display: grid; grid-template-columns: 52px 1fr; gap: var(--s4); font-size: var(--fs-xs); line-height: 21px; color: var(--text-secondary); }
   .why b { font-size: 10px; font-weight: 600; letter-spacing: .12em; color: var(--text-tertiary); padding-top: 1px; }
-  .why b.ai { color: var(--text-primary); }
+  .why b.ai { color: var(--accent); }
   .task { margin-top: var(--s4); font-size: var(--fs-xs); color: var(--text-tertiary); }
   .acts { display: flex; gap: var(--s4); margin-top: var(--s5); flex-wrap: wrap; }
   .empty { background: var(--surface-raised); border-radius: var(--radius); padding: 60px var(--s6); text-align: center; color: var(--text-secondary); }
@@ -288,9 +291,9 @@
   <section class="stats">
     <div class="stat"><div class="eyebrow">Spent this month</div><b class="num" id="spent">$0.00</b><div class="meter"><i id="meter"></i></div></div>
     <div class="stat"><div class="eyebrow">Budget left</div><b class="num" id="left">$0.00</b></div>
-    <div class="stat"><div class="eyebrow">Paid</div><b class="num paid" id="n-paid">0</b></div>
-    <div class="stat"><div class="eyebrow">Waiting for you</div><b class="num wait" id="n-wait">0</b></div>
-    <div class="stat"><div class="eyebrow">Stopped</div><b class="num stop" id="n-stop">0</b></div>
+    <div class="stat"><div class="eyebrow"><i class="dot" style="background:var(--paid)"></i>Paid</div><b class="num" id="n-paid">0</b></div>
+    <div class="stat"><div class="eyebrow"><i class="dot" style="background:var(--wait)"></i>Waiting for you</div><b class="num" id="n-wait">0</b></div>
+    <div class="stat"><div class="eyebrow"><i class="dot" style="background:var(--stop)"></i>Stopped</div><b class="num" id="n-stop">0</b></div>
   </section>
 
   <section class="how" id="how">
@@ -429,7 +432,7 @@ async function loadStatus() {
   countTo($("left"), Math.max(0, budget - s.spent_this_month), money);
   countTo($("card-limit"), s.policy.per_payment_limit, money);
   $("meter").style.width = used * 100 + "%";
-  $("meter").style.background = used > .9 ? "var(--stop)" : used > .7 ? "var(--wait)" : "var(--text-primary)";
+  $("meter").style.background = used > .9 ? "var(--stop)" : used > .7 ? "var(--wait)" : "var(--accent)";
   $("rule-list").innerHTML = ruleRows(s.policy);
 }
 
