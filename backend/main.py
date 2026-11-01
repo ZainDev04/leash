@@ -119,8 +119,10 @@ def pay(body: PayRequest):
         verdict = ai.check_payment(req)
     except Exception as e:
         verdict = {"verdict": "block", "reason": f"AI check failed, so Leash blocked it to be safe ({type(e).__name__})."}
-    if verdict["verdict"] != "ok" or reasons:
+    if verdict["verdict"] != "ok":
         reasons.append("AI: " + verdict["reason"])
+    elif reasons:
+        reasons.append("AI ok: " + verdict["reason"])
 
     # The AI can only make the decision stricter
     order = {"ok": 0, "ask": 1, "block": 2}
