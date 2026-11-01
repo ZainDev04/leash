@@ -251,7 +251,7 @@
     <a class="logo" href="#">leash<span>.</span></a>
     <nav class="nav-links"><a href="#how">How it works</a><a href="#payments">Payments</a><a href="#rules">Rules</a></nav>
     <div class="grow"></div>
-    <button class="ghost" id="theme"><span class="lbl">Theme: </span><span id="theme-name">system</span></button>
+    <button class="ghost" id="theme"><span class="lbl">Theme: </span><span id="theme-name">light</span></button>
     <button class="kill" id="freeze" role="switch" aria-checked="false" aria-label="Freeze all agent payments"><span class="sw"></span><span class="lbl">Kill switch</span></button>
   </div>
   <div class="freeze-bar">All agent payments are frozen. Nothing is paid until you turn the kill switch off.</div>
@@ -361,9 +361,9 @@ function applyTheme(t) {
   if (t === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
   $("theme-name").textContent = t;
 }
-let theme = store.get("leash-theme") || "system";
+let theme = store.get("leash-theme-v2") || "light";
 applyTheme(theme);
-$("theme").onclick = () => { theme = themes[(themes.indexOf(theme) + 1) % 3]; store.set("leash-theme", theme); applyTheme(theme); };
+$("theme").onclick = () => { theme = themes[(themes.indexOf(theme) + 1) % 3]; store.set("leash-theme-v2", theme); applyTheme(theme); };
 
 // Glossy card: tilt and light follow the pointer
 const card = $("card");
