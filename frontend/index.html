@@ -6,182 +6,236 @@
 <title>Leash</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #04050a; --fg: #f3f5fa; --fg-2: #aab1c3; --muted: #6b7388;
-    --glass: rgba(18, 21, 32, .42); --glass-2: rgba(30, 34, 50, .55); --edge: rgba(255,255,255,.09); --edge-2: rgba(255,255,255,.18);
-    --core: #cfe9ff; --paid: #34f5a4; --wait: #ffb547; --block: #ff4d5e;
-    --shadow: 0 30px 60px -30px rgba(0,0,0,.8);
+    /* Foundations from the reference guide */
+    --surface-base: #000000; --surface-raised: #161619; --surface-muted: #222327;
+    --text-primary: #ffffff; --text-secondary: #a1a1aa; --text-tertiary: #6b6b74; --line: rgba(255,255,255,.08); --line-strong: rgba(255,255,255,.16);
+    --invert-bg: #ffffff; --invert-fg: #000000;
+    --paid: #3ddc97; --wait: #ffb340; --stop: #ff5a5f;
+    --shadow-1: rgba(0,0,0,.3) 15px 15px 50px 0px;
+    --fs-xs: 13px; --fs-sm: 16px; --fs-md: 17px; --fs-lg: 19px; --fs-xl: 20px; --fs-2xl: 24px; --fs-3xl: 26px; --fs-4xl: 38.4px;
+    --s1: 3px; --s2: 5px; --s3: 8px; --s4: 10px; --s5: 20px; --s6: 30px; --s7: 35px; --s8: 40px;
+    --t-instant: 200ms; --t-fast: 250ms; --t-normal: 500ms; --ease: cubic-bezier(.2,.8,.2,1);
+    --radius: 18px;
     color-scheme: dark;
   }
   :root[data-theme="light"] {
-    --bg: #eef0f5; --fg: #0b0d14; --fg-2: #3f4659; --muted: #6c7389;
-    --glass: rgba(255,255,255,.5); --glass-2: rgba(255,255,255,.72); --edge: rgba(10,14,30,.08); --edge-2: rgba(10,14,30,.16);
-    --core: #1a2a55; --paid: #0b9a62; --wait: #c27a00; --block: #d92c3e;
-    --shadow: 0 30px 60px -34px rgba(20,30,60,.35);
+    --surface-base: #ffffff; --surface-raised: #f4f4f6; --surface-muted: #e9e9ee;
+    --text-primary: #212529; --text-secondary: #55595f; --text-tertiary: #868a91; --line: rgba(0,0,0,.08); --line-strong: rgba(0,0,0,.16);
+    --invert-bg: #000000; --invert-fg: #ffffff;
+    --paid: #12865a; --wait: #b86e00; --stop: #d42f3a;
+    --shadow-1: rgba(0,0,0,.08) 15px 15px 50px 0px;
     color-scheme: light;
   }
   @media (prefers-color-scheme: light) {
     :root:not([data-theme]) {
-      --bg: #eef0f5; --fg: #0b0d14; --fg-2: #3f4659; --muted: #6c7389;
-      --glass: rgba(255,255,255,.5); --glass-2: rgba(255,255,255,.72); --edge: rgba(10,14,30,.08); --edge-2: rgba(10,14,30,.16);
-      --core: #1a2a55; --paid: #0b9a62; --wait: #c27a00; --block: #d92c3e;
-      --shadow: 0 30px 60px -34px rgba(20,30,60,.35);
+      --surface-base: #ffffff; --surface-raised: #f4f4f6; --surface-muted: #e9e9ee;
+      --text-primary: #212529; --text-secondary: #55595f; --text-tertiary: #868a91; --line: rgba(0,0,0,.08); --line-strong: rgba(0,0,0,.16);
+      --invert-bg: #000000; --invert-fg: #ffffff;
+      --paid: #12865a; --wait: #b86e00; --stop: #d42f3a;
+      --shadow-1: rgba(0,0,0,.08) 15px 15px 50px 0px;
       color-scheme: light;
     }
   }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 "Inter Tight", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-  #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; z-index: 0; }
-  .vignette { position: fixed; inset: 0; z-index: 1; pointer-events: none;
-              background: radial-gradient(ellipse at center, transparent 40%, color-mix(in srgb, var(--bg) 85%, transparent) 100%); }
-  .ui { position: relative; z-index: 2; }
-  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
-  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+  body { margin: 0; background: var(--surface-base); color: var(--text-primary); font: 400 var(--fs-sm)/24px "Poppins", sans-serif;
+         -webkit-font-smoothing: antialiased; transition: background-color var(--t-normal), color var(--t-normal); overflow-x: hidden; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 var(--s8); }
   button { font: inherit; color: inherit; }
-  :focus-visible { outline: 2px solid var(--paid); outline-offset: 3px; border-radius: 10px; }
-  .label { font: 500 11px "JetBrains Mono", monospace; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-
-  .glass { background: var(--glass); border: 1px solid var(--edge); border-radius: 22px; box-shadow: var(--shadow);
-           backdrop-filter: blur(22px) saturate(140%); -webkit-backdrop-filter: blur(22px) saturate(140%); }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; border-radius: 8px; }
+  .eyebrow { font-size: var(--fs-xs); font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--text-secondary); }
+  .num { font-variant-numeric: tabular-nums; }
 
   /* Nav */
-  nav { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 10; width: min(1216px, calc(100vw - 32px));
-        display: flex; align-items: center; gap: 14px; padding: 10px 12px 10px 20px; border-radius: 99px; }
-  .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: -.02em; }
-  .logo i { width: 10px; height: 10px; border-radius: 50%; background: var(--core); box-shadow: 0 0 14px var(--core), 0 0 4px var(--core); }
+  header { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--surface-base) 82%, transparent);
+           backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; gap: var(--s6); height: 80px; }
+  .logo { font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -.03em; text-decoration: none; }
+  .logo span { color: var(--paid); }
+  .nav-links { display: flex; gap: var(--s6); }
+  .nav-links a { text-decoration: none; font-size: var(--fs-sm); font-weight: 500; color: var(--text-secondary); transition: color var(--t-instant); padding: var(--s3) 0; }
+  .nav-links a:hover { color: var(--text-primary); }
   .grow { flex: 1; }
-  .live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg-2); }
-  .live b { width: 7px; height: 7px; border-radius: 50%; background: var(--paid); box-shadow: 0 0 10px var(--paid); animation: blink 2s infinite; }
-  @keyframes blink { 50% { opacity: .35; } }
-  .pill-btn { border: 1px solid var(--edge-2); background: transparent; border-radius: 99px; padding: 8px 14px; cursor: pointer; font-size: 13px; color: var(--fg-2); transition: color .3s, border-color .3s, background .3s; min-height: 38px; }
-  .pill-btn:hover { color: var(--fg); border-color: var(--fg-2); }
-  .kill { display: inline-flex; align-items: center; gap: 10px; border-radius: 99px; padding: 6px 16px 6px 6px; cursor: pointer; border: 1px solid var(--edge-2);
-          background: transparent; font-size: 13px; font-weight: 500; transition: all .35s; min-height: 38px; }
-  .kill .sw { width: 38px; height: 24px; border-radius: 99px; background: var(--glass-2); border: 1px solid var(--edge-2); position: relative; transition: background .35s; }
-  .kill .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--fg); transition: transform .45s cubic-bezier(.5,1.6,.4,1); }
-  .kill[aria-checked="true"] { border-color: var(--block); color: var(--block); box-shadow: 0 0 24px -6px var(--block); }
-  .kill[aria-checked="true"] .sw { background: var(--block); }
-  .kill[aria-checked="true"] .sw::after { transform: translateX(14px); background: #fff; }
+  .ghost { border: 1px solid var(--line-strong); background: transparent; border-radius: 99px; padding: var(--s3) 18px; cursor: pointer; font-size: var(--fs-xs); font-weight: 500;
+           color: var(--text-secondary); min-height: 40px; transition: color var(--t-instant), border-color var(--t-instant); }
+  .ghost:hover { color: var(--text-primary); border-color: var(--text-primary); }
+  .kill { display: inline-flex; align-items: center; gap: var(--s4); background: var(--surface-raised); border: 1px solid var(--line); border-radius: 99px;
+          padding: var(--s2) 18px var(--s2) var(--s2); cursor: pointer; font-size: var(--fs-xs); font-weight: 600; min-height: 40px; transition: all var(--t-fast); }
+  .kill .sw { width: 40px; height: 28px; border-radius: 99px; background: var(--surface-muted); position: relative; transition: background var(--t-fast); }
+  .kill .sw::after { content: ""; position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--text-primary);
+                     transition: transform var(--t-normal) cubic-bezier(.5,1.6,.4,1); }
+  .kill[aria-checked="true"] { color: var(--stop); border-color: var(--stop); }
+  .kill[aria-checked="true"] .sw { background: var(--stop); }
+  .kill[aria-checked="true"] .sw::after { transform: translateX(12px); background: #fff; }
+
+  .freeze-bar { background: var(--stop); color: #fff; text-align: center; font-size: var(--fs-xs); font-weight: 600; letter-spacing: .04em;
+                max-height: 0; overflow: hidden; transition: max-height var(--t-normal) var(--ease); }
+  body.frozen .freeze-bar { max-height: 44px; padding: var(--s4); }
 
   /* Hero */
-  .hero { min-height: 100vh; display: grid; grid-template-rows: 1fr auto; padding-top: 110px; padding-bottom: 40px; }
-  .hero-center { display: grid; place-items: center; pointer-events: none; }
-  #event { text-align: center; opacity: 0; transform: translateY(10px); transition: opacity .6s, transform .6s; margin-top: 2vh; }
-  #event.on { opacity: 1; transform: none; }
-  #event .ev-k { font: 600 12px "JetBrains Mono"; letter-spacing: .2em; }
-  #event .ev-t { font-size: 15px; color: var(--fg-2); margin-top: 6px; }
-  .hero-bottom { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: end; }
-  h1 { font-size: clamp(40px, 5.2vw, 78px); line-height: .95; letter-spacing: -.045em; font-weight: 600; margin: 14px 0 18px; }
-  h1 span { color: transparent; -webkit-text-stroke: 1.2px var(--fg); }
-  .lede { color: var(--fg-2); font-size: 17px; max-width: 500px; margin: 0 0 26px; }
-  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: 99px;
-         font-weight: 500; cursor: pointer; text-decoration: none; border: 1px solid var(--edge-2); background: var(--glass); color: var(--fg);
-         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s, background .3s; }
+  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; padding: 90px 0 70px; }
+  h1 { font-size: clamp(42px, 5vw, 74px); line-height: 1.02; letter-spacing: -.045em; font-weight: 700; margin: var(--s5) 0 var(--s6); }
+  h1 em { font-style: normal; font-weight: 300; color: var(--text-secondary); }
+  .lede { font-size: var(--fs-md); line-height: 30px; color: var(--text-secondary); max-width: 500px; margin: 0 0 var(--s8); }
+  .ctas { display: flex; gap: var(--s4); flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s4); min-height: 56px; padding: 0 var(--s6); border-radius: 99px;
+         font-size: var(--fs-sm); font-weight: 600; cursor: pointer; text-decoration: none; border: 1px solid var(--line-strong); background: transparent;
+         transition: transform var(--t-fast) var(--ease), background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast); }
   .btn:hover { transform: translateY(-2px); }
-  .btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); box-shadow: 0 0 40px -10px var(--core); }
-  .btn.primary:hover { box-shadow: 0 0 60px -6px var(--core); }
-  .btn.go { background: var(--paid); color: #04120b; border-color: var(--paid); }
-  .btn.small { min-height: 40px; padding: 0 16px; font-size: 14px; }
+  .btn:active { transform: translateY(0) scale(.98); }
+  .btn.solid { background: var(--invert-bg); color: var(--invert-fg); border-color: var(--invert-bg); }
+  .btn.solid:hover { box-shadow: var(--shadow-1); }
+  .btn.go { background: var(--paid); border-color: var(--paid); color: #04130c; }
+  .btn.sm { min-height: 44px; padding: 0 var(--s5); font-size: var(--fs-xs); }
   .btn:disabled { opacity: .5; cursor: progress; transform: none; }
+  .btn .arr { transition: transform var(--t-fast); } .btn:hover .arr { transform: translateX(4px); }
 
-  .meter { padding: 24px 26px; }
-  .meter .big { font: 500 clamp(40px, 5vw, 64px)/1 "JetBrains Mono"; letter-spacing: -.04em; margin: 10px 0 4px; }
-  .meter .of { color: var(--muted); font-size: 14px; }
-  .bar { height: 4px; border-radius: 4px; background: var(--edge-2); margin: 18px 0 20px; overflow: hidden; }
-  .bar i { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--paid); box-shadow: 0 0 16px var(--paid); transition: width 1.4s cubic-bezier(.2,.8,.2,1), background .4s; }
-  .counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .count { padding: 12px 14px; border-radius: 14px; background: var(--glass-2); border: 1px solid var(--edge); }
-  .count b { display: block; font: 500 24px "JetBrains Mono"; }
-  .count.paid b { color: var(--paid); } .count.wait b { color: var(--wait); } .count.block b { color: var(--block); }
-  .scroll-cue { text-align: center; margin-top: 30px; color: var(--muted); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; }
-  .scroll-cue i { display: block; width: 1px; height: 34px; margin: 10px auto 0; background: linear-gradient(var(--fg-2), transparent); animation: cue 2s infinite; transform-origin: top; }
-  @keyframes cue { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+  /* Glossy 3D agent card */
+  .card-stage { perspective: 1400px; display: grid; place-items: center; padding: var(--s8) 0; }
+  .agent-card { position: relative; width: min(520px, 100%); aspect-ratio: 1.586; border-radius: 26px; transform-style: preserve-3d;
+                transform: rotateX(var(--rx, 8deg)) rotateY(var(--ry, -16deg)); transition: transform var(--t-normal) var(--ease), box-shadow var(--t-normal);
+                background:
+                  radial-gradient(120% 140% at 0% 0%, #3a3b42 0%, #17171b 45%, #050506 100%);
+                box-shadow: 0 50px 80px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.08) inset, 0 1px 0 rgba(255,255,255,.25) inset;
+                color: #f4f4f6; animation: float 6s ease-in-out infinite; }
+  @keyframes float { 50% { translate: 0 -12px; } }
+  .agent-card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+                        background: repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 2px, transparent 2px 5px); }
+  .agent-card .sheen { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; mix-blend-mode: screen;
+                       background: radial-gradient(500px 260px at var(--gx, 20%) var(--gy, 0%), rgba(255,255,255,.28), transparent 55%),
+                                   linear-gradient(115deg, transparent 30%, rgba(255,255,255,.10) 45%, transparent 60%); }
+  .agent-card .glow { position: absolute; inset: -2px; border-radius: 28px; pointer-events: none; opacity: 0; transition: opacity var(--t-normal);
+                      box-shadow: 0 0 0 2px var(--g), 0 0 60px -6px var(--g); }
+  .agent-card.react .glow { opacity: 1; }
+  .agent-card.shake { animation: shake .5s var(--ease), float 6s ease-in-out infinite; }
+  @keyframes shake { 20%,60% { translate: -8px 0; } 40%,80% { translate: 8px 0; } }
+  .ac-in { position: absolute; inset: 0; padding: 28px 30px; display: flex; flex-direction: column; transform: translateZ(40px); }
+  .ac-row { display: flex; justify-content: space-between; align-items: center; }
+  .ac-brand { font-weight: 700; font-size: var(--fs-2xl); letter-spacing: -.03em; }
+  .ac-brand span { color: #3ddc97; }
+  .ac-tag { font-size: 11px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: #9a9aa3; }
+  .chip { width: 52px; height: 40px; border-radius: 9px; margin-top: 26px;
+          background: linear-gradient(135deg, #e9d9a6, #b89a52 40%, #f3e6bd 60%, #a7883f); box-shadow: inset 0 0 0 1px rgba(0,0,0,.25); position: relative; overflow: hidden; }
+  .chip::after { content: ""; position: absolute; inset: 8px 0; border-top: 1px solid rgba(0,0,0,.25); border-bottom: 1px solid rgba(0,0,0,.25); }
+  .ac-limit { margin-top: auto; }
+  .ac-limit b { display: block; font-size: var(--fs-4xl); font-weight: 600; letter-spacing: -.03em; line-height: 1.1; }
+  .ac-limit small { color: #9a9aa3; font-size: var(--fs-xs); }
+  .ac-status { display: inline-flex; align-items: center; gap: var(--s3); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .ac-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--g, #3ddc97); box-shadow: 0 0 12px var(--g, #3ddc97); }
+  .card-caption { margin-top: var(--s6); text-align: center; font-size: var(--fs-xs); color: var(--text-secondary); min-height: 24px; transition: opacity var(--t-fast); }
 
-  /* Sections */
-  .section { padding: 60px 0 40px; }
-  .sec-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
-  h2 { font-size: clamp(30px, 3.6vw, 46px); letter-spacing: -.035em; font-weight: 600; margin: 8px 0 0; }
-  .grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 22px; align-items: start; padding-bottom: 120px; }
+  /* Stats strip */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .stat { padding: var(--s8) var(--s6); border-left: 1px solid var(--line); }
+  .stat:first-child { border-left: 0; padding-left: 0; }
+  .stat b { display: block; font-size: var(--fs-4xl); font-weight: 600; letter-spacing: -.03em; line-height: 1.2; margin-top: var(--s3); }
+  .stat .paid { color: var(--paid); } .stat .wait { color: var(--wait); } .stat .stop { color: var(--stop); }
+  .meter { height: 4px; border-radius: 4px; background: var(--surface-muted); margin-top: var(--s4); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--text-primary); border-radius: 4px; transition: width 1.2s var(--ease), background var(--t-fast); }
 
-  .pay { padding: 22px 24px; margin-bottom: 16px; position: relative; overflow: hidden; transition: transform .4s cubic-bezier(.2,.8,.2,1), border-color .4s; }
-  .pay:hover { transform: translateY(-3px); border-color: var(--edge-2); }
-  .pay::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 2px; background: var(--c); box-shadow: 0 0 18px var(--c); }
-  .pay.paid { --c: var(--paid); } .pay.waiting { --c: var(--wait); } .pay.blocked { --c: var(--block); } .pay.cancelled, .pay.checking { --c: var(--muted); }
-  .pay.waiting { border-color: color-mix(in srgb, var(--wait) 50%, transparent); }
-  .pay.enter { animation: materialize .9s cubic-bezier(.2,.8,.2,1) both; }
-  @keyframes materialize { from { opacity: 0; transform: translateY(30px) scale(.96); filter: blur(10px); } to { opacity: 1; transform: none; filter: none; } }
-  .pay-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
-  .pay-item { font-size: 21px; font-weight: 600; letter-spacing: -.02em; }
-  .pay-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
-  .pay-amt { font: 500 22px "JetBrains Mono"; text-align: right; }
-  .status { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; font: 600 11px "JetBrains Mono"; letter-spacing: .12em; text-transform: uppercase; color: var(--c); }
-  .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+  /* How it works */
+  .how { padding: 100px 0 40px; }
+  .sec-title { display: flex; justify-content: space-between; align-items: end; gap: var(--s5); margin-bottom: var(--s8); flex-wrap: wrap; }
+  h2 { font-size: clamp(32px, 4vw, 52px); line-height: 1.08; letter-spacing: -.04em; font-weight: 700; margin: var(--s4) 0 0; }
+  .sec-title p { color: var(--text-secondary); max-width: 420px; margin: 0; }
+  .how-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s5); }
+  .how-item { background: var(--surface-raised); border-radius: var(--radius); padding: var(--s6); position: relative; overflow: hidden;
+              transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast); }
+  .how-item:hover { transform: translateY(-6px); box-shadow: var(--shadow-1); }
+  .how-item .n { font-size: 60px; font-weight: 800; letter-spacing: -.05em; line-height: 1; color: var(--surface-muted); }
+  .how-item h3 { font-size: var(--fs-xl); font-weight: 600; margin: var(--s5) 0 var(--s3); letter-spacing: -.01em; }
+  .how-item p { font-size: var(--fs-xs); line-height: 22px; color: var(--text-secondary); margin: 0; }
+  .how-item .tag { position: absolute; top: var(--s6); right: var(--s6); font-size: 11px; font-weight: 600; letter-spacing: .06em; padding: var(--s1) var(--s4); border-radius: 99px; }
+  .tag.stop { color: var(--stop); background: color-mix(in srgb, var(--stop) 14%, transparent); }
+  .tag.wait { color: var(--wait); background: color-mix(in srgb, var(--wait) 14%, transparent); }
 
-  .trace { display: grid; grid-template-columns: repeat(4, 1fr); margin: 18px 0 14px; position: relative; }
-  .trace::before { content: ""; position: absolute; left: 6px; right: 6px; top: 6px; height: 1px; background: var(--edge-2); }
-  .tp { position: relative; font-size: 12px; color: var(--muted); }
-  .tp i { display: block; width: 13px; height: 13px; border-radius: 50%; border: 1px solid var(--edge-2); background: var(--bg); margin-bottom: 8px; position: relative; }
-  .tp.ok { color: var(--fg-2); } .tp.ok i { background: var(--paid); border-color: var(--paid); box-shadow: 0 0 10px var(--paid); }
-  .tp.warn i { background: var(--wait); border-color: var(--wait); box-shadow: 0 0 10px var(--wait); } .tp.warn { color: var(--wait); }
-  .tp.no i { background: var(--block); border-color: var(--block); box-shadow: 0 0 10px var(--block); } .tp.no { color: var(--block); }
-  .pay.enter .tp i { animation: lit .5s cubic-bezier(.3,1.6,.5,1) both; }
-  .pay.enter .tp:nth-child(2) i { animation-delay: .2s; } .pay.enter .tp:nth-child(3) i { animation-delay: .4s; } .pay.enter .tp:nth-child(4) i { animation-delay: .6s; }
-  @keyframes lit { from { transform: scale(0); } to { transform: scale(1); } }
+  /* Payments + rules */
+  .work { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--s6); padding: 80px 0 120px; align-items: start; }
+  .pay { background: var(--surface-raised); border-radius: var(--radius); padding: var(--s6); margin-bottom: var(--s5); position: relative;
+         transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast); }
+  .pay:hover { transform: translateY(-3px); box-shadow: var(--shadow-1); }
+  .pay.waiting { box-shadow: 0 0 0 1.5px var(--wait); }
+  .pay.enter { animation: rise var(--t-normal) var(--ease) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  .pay-head { display: flex; justify-content: space-between; gap: var(--s5); align-items: flex-start; }
+  .pay-item { font-size: var(--fs-xl); font-weight: 600; letter-spacing: -.01em; line-height: 28px; }
+  .pay-meta { font-size: var(--fs-xs); color: var(--text-tertiary); margin-top: var(--s1); }
+  .pay-amt { font-size: var(--fs-3xl); font-weight: 600; letter-spacing: -.02em; text-align: right; }
+  .badge { display: inline-block; margin-top: var(--s3); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: var(--s1) var(--s4); border-radius: 99px; }
+  .badge.paid { color: var(--paid); background: color-mix(in srgb, var(--paid) 14%, transparent); }
+  .badge.waiting { color: var(--wait); background: color-mix(in srgb, var(--wait) 14%, transparent); }
+  .badge.blocked, .badge.cancelled { color: var(--stop); background: color-mix(in srgb, var(--stop) 14%, transparent); }
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); margin: var(--s5) 0; }
+  .flow div { height: 4px; border-radius: 4px; background: var(--surface-muted); position: relative; }
+  .flow div span { position: absolute; top: 10px; left: 0; font-size: 11px; font-weight: 500; color: var(--text-tertiary); white-space: nowrap; }
+  .flow .ok { background: var(--paid); } .flow .ok span { color: var(--text-secondary); }
+  .flow .warn { background: var(--wait); } .flow .warn span { color: var(--wait); }
+  .flow .no { background: var(--stop); } .flow .no span { color: var(--stop); }
+  .pay.enter .flow div { animation: fill var(--t-normal) var(--ease) both; transform-origin: left; }
+  .pay.enter .flow div:nth-child(2) { animation-delay: .15s; } .pay.enter .flow div:nth-child(3) { animation-delay: .3s; } .pay.enter .flow div:nth-child(4) { animation-delay: .45s; }
+  @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .why { margin-top: 38px; display: grid; gap: var(--s3); }
+  .why div { display: grid; grid-template-columns: 52px 1fr; gap: var(--s4); font-size: var(--fs-xs); line-height: 21px; color: var(--text-secondary); }
+  .why b { font-size: 10px; font-weight: 600; letter-spacing: .12em; color: var(--text-tertiary); padding-top: 1px; }
+  .why b.ai { color: var(--text-primary); }
+  .task { margin-top: var(--s4); font-size: var(--fs-xs); color: var(--text-tertiary); }
+  .acts { display: flex; gap: var(--s4); margin-top: var(--s5); flex-wrap: wrap; }
+  .empty { background: var(--surface-raised); border-radius: var(--radius); padding: 60px var(--s6); text-align: center; color: var(--text-secondary); }
+  .empty code { display: inline-block; margin-top: var(--s4); padding: var(--s2) var(--s4); background: var(--surface-muted); border-radius: 8px; font-size: var(--fs-xs); color: var(--text-primary); }
 
-  .why { display: grid; gap: 7px; }
-  .why div { display: grid; grid-template-columns: 46px 1fr; gap: 10px; font-size: 14px; color: var(--fg-2); }
-  .src { font: 500 10px/2 "JetBrains Mono"; letter-spacing: .14em; color: var(--muted); }
-  .src.ai { color: var(--core); }
-  .task { margin-top: 12px; font-size: 13px; color: var(--muted); }
-  .acts { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .side { background: var(--surface-raised); border-radius: var(--radius); padding: var(--s6); position: sticky; top: 104px; }
+  .side h3 { font-size: var(--fs-2xl); font-weight: 600; margin: var(--s3) 0 var(--s5); letter-spacing: -.02em; }
+  .rules { list-style: none; margin: 0 0 var(--s6); padding: 0; }
+  .rules li { display: flex; justify-content: space-between; gap: var(--s5); padding: 14px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-xs); color: var(--text-secondary); }
+  .rules li b { font-weight: 600; color: var(--text-primary); text-align: right; }
+  label.lb { display: block; font-size: var(--fs-xs); font-weight: 600; margin-bottom: var(--s3); }
+  textarea { width: 100%; min-height: 120px; resize: vertical; padding: 14px var(--s5); border-radius: 14px; border: 1px solid var(--line-strong);
+             background: var(--surface-base); color: var(--text-primary); font: 400 var(--fs-xs)/22px "Poppins"; transition: border-color var(--t-instant); }
+  textarea:focus { outline: none; border-color: var(--text-primary); }
+  .hint { font-size: 12px; color: var(--text-tertiary); margin: var(--s3) 0 var(--s5); line-height: 19px; }
+  .draft { margin-top: var(--s5); padding: var(--s5); border-radius: 14px; background: var(--surface-muted); animation: rise var(--t-normal) var(--ease) both; }
+  .draft p { font-size: var(--fs-xs); color: var(--text-secondary); margin: var(--s3) 0 0; line-height: 21px; }
+  .vault { display: flex; justify-content: space-between; margin-top: var(--s6); font-size: var(--fs-xs); color: var(--text-secondary); }
+  .vault b { color: var(--text-primary); font-weight: 600; }
 
-  .side { position: sticky; top: 100px; padding: 24px; }
-  .rules { list-style: none; padding: 0; margin: 16px 0 22px; }
-  .rules li { display: flex; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--edge); font-size: 14px; color: var(--fg-2); }
-  .rules li b { font: 500 13px "JetBrains Mono"; color: var(--fg); text-align: right; }
-  textarea { width: 100%; min-height: 110px; resize: vertical; padding: 14px 16px; border-radius: 16px; font: 15px/1.5 "Inter Tight"; color: var(--fg);
-             background: var(--glass-2); border: 1px solid var(--edge-2); transition: border-color .3s, box-shadow .3s; }
-  textarea:focus { outline: none; border-color: var(--core); box-shadow: 0 0 0 4px color-mix(in srgb, var(--core) 18%, transparent); }
-  .hint { font-size: 13px; color: var(--muted); margin: 8px 0 14px; }
-  .draft { margin-top: 18px; padding: 18px; border-radius: 16px; background: var(--glass-2); border: 1px solid color-mix(in srgb, var(--core) 40%, transparent); animation: materialize .7s cubic-bezier(.2,.8,.2,1) both; }
-  .draft p { color: var(--fg-2); font-size: 14px; margin: 8px 0 0; }
-  .vault { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--edge); font-size: 14px; }
-  .empty { padding: 40px 24px; text-align: center; color: var(--muted); }
-  .empty code { display: inline-block; margin-top: 10px; font: 13px "JetBrains Mono"; color: var(--fg); padding: 6px 12px; border-radius: 10px; background: var(--glass-2); }
-  .spin { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: rot .8s linear infinite; }
+  .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: rot .8s linear infinite; }
   @keyframes rot { to { transform: rotate(360deg); } }
 
-  .frozen-veil { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .8s;
-                 box-shadow: inset 0 0 160px 20px color-mix(in srgb, var(--block) 45%, transparent); }
-  body.frozen .frozen-veil { opacity: 1; }
+  .toasts { position: fixed; right: var(--s5); bottom: var(--s5); z-index: 50; display: grid; gap: var(--s4); width: min(360px, calc(100vw - 32px)); }
+  .toast { background: var(--invert-bg); color: var(--invert-fg); border-radius: 14px; padding: 14px var(--s5); font-size: var(--fs-xs); line-height: 20px;
+           box-shadow: var(--shadow-1); animation: rise var(--t-normal) var(--ease) both; display: flex; gap: var(--s4); align-items: center; }
+  .toast i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .toast.out { animation: out var(--t-fast) ease forwards; }
+  @keyframes out { to { opacity: 0; transform: translateY(10px); } }
 
-  .toasts { position: fixed; right: 20px; bottom: 20px; z-index: 20; display: grid; gap: 10px; width: min(360px, calc(100vw - 32px)); }
-  .toast { padding: 14px 16px; border-radius: 16px; font-size: 14px; display: grid; gap: 2px; animation: materialize .5s cubic-bezier(.2,.8,.2,1) both; }
-  .toast b { font: 600 11px "JetBrains Mono"; letter-spacing: .14em; text-transform: uppercase; }
-  .toast.out { animation: fadeout .35s ease forwards; }
-  @keyframes fadeout { to { opacity: 0; transform: translateY(10px); filter: blur(6px); } }
+  .reveal { animation: rise 800ms var(--ease) both; }
+  .d1 { animation-delay: 100ms; } .d2 { animation-delay: 200ms; } .d3 { animation-delay: 300ms; }
 
-  .rise { animation: materialize 1.2s cubic-bezier(.2,.8,.2,1) both; }
-  .d1 { animation-delay: .15s; } .d2 { animation-delay: .3s; } .d3 { animation-delay: .45s; }
-
-  @media (max-width: 980px) {
-    .hero-bottom, .grid { grid-template-columns: 1fr; }
+  @media (max-width: 1024px) {
+    .hero, .work { grid-template-columns: 1fr; }
+    .how-grid { grid-template-columns: repeat(2, 1fr); }
+    .stats { grid-template-columns: repeat(3, 1fr); }
+    .stat:nth-child(4) { border-left: 0; padding-left: 0; }
     .side { position: static; }
-    #event { margin-top: 22vh; }
+    .nav-links { display: none; }
   }
-  @media (max-width: 560px) {
+  @media (max-width: 600px) {
     .wrap { padding: 0 16px; }
-    nav { padding-left: 14px; }
-    .live, .theme-lbl { display: none; }
-    .kill .kill-lbl { display: none; }
-    .kill { padding-right: 6px; }
-    .pay-top { flex-direction: column; } .pay-amt { text-align: left; }
-    .trace .tp { font-size: 11px; }
+    header .wrap { gap: var(--s4); }
+    .kill .lbl, .ghost .lbl { display: none; }
+    .hero { padding: 50px 0 40px; gap: 20px; }
+    .how-grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat { padding: var(--s5) var(--s4); }
+    .stat:nth-child(odd) { border-left: 0; padding-left: 0; }
+    .stat:nth-child(4) { border-left: 1px solid var(--line); padding-left: var(--s4); }
+    .pay-head { flex-direction: column; } .pay-amt { text-align: left; }
+    .ac-in { padding: 20px; } .ac-limit b { font-size: var(--fs-3xl); } .chip { margin-top: 14px; width: 42px; height: 32px; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
@@ -189,87 +243,103 @@
 </style>
 </head>
 <body>
-<canvas id="scene" aria-hidden="true"></canvas>
-<div class="vignette"></div>
-<div class="frozen-veil"></div>
+<header>
+  <div class="wrap">
+    <a class="logo" href="#">leash<span>.</span></a>
+    <nav class="nav-links"><a href="#how">How it works</a><a href="#payments">Payments</a><a href="#rules">Rules</a></nav>
+    <div class="grow"></div>
+    <button class="ghost" id="theme"><span class="lbl">Theme: </span><span id="theme-name">system</span></button>
+    <button class="kill" id="freeze" role="switch" aria-checked="false" aria-label="Freeze all agent payments"><span class="sw"></span><span class="lbl">Kill switch</span></button>
+  </div>
+  <div class="freeze-bar">All agent payments are frozen. Nothing is paid until you turn the kill switch off.</div>
+</header>
 
-<nav class="glass">
-  <div class="logo"><i></i>Leash</div>
-  <span class="live"><b></b>Watching your agents</span>
-  <div class="grow"></div>
-  <button class="pill-btn" id="theme"><span class="theme-lbl">Theme: </span><span id="theme-name">system</span></button>
-  <button class="kill" id="freeze" role="switch" aria-checked="false" aria-label="Freeze all agent payments"><span class="sw"></span><span class="kill-lbl">Kill switch</span></button>
-</nav>
-
-<div class="ui">
-  <section class="hero wrap">
-    <div class="hero-center"><div id="event"><div class="ev-k" id="ev-k"></div><div class="ev-t" id="ev-t"></div></div></div>
+<main class="wrap">
+  <section class="hero">
     <div>
-      <div class="hero-bottom">
-        <div>
-          <div class="label rise">PayPal sandbox &middot; Gemini</div>
-          <h1 class="rise d1">Your agents pay.<br><span>You hold the leash.</span></h1>
-          <p class="lede rise d2">Every payment an AI agent makes is held in PayPal, checked against your rules, read by AI for tricks, then paid, sent to you, or stopped.</p>
-          <div class="row rise d3">
-            <a class="btn primary" href="/vault/start" id="vault-btn">Connect PayPal</a>
-            <a class="btn" href="#ledger">See payments</a>
-          </div>
-        </div>
-        <div class="glass meter rise d2">
-          <div class="label">Spent this month</div>
-          <div class="big" id="spent">$0.00</div>
-          <div class="of" id="of">of $0.00 budget</div>
-          <div class="bar"><i id="bar"></i></div>
-          <div class="counts">
-            <div class="count paid"><span class="label">Paid</span><b id="n-paid">0</b></div>
-            <div class="count wait"><span class="label">Waiting</span><b id="n-wait">0</b></div>
-            <div class="count block"><span class="label">Stopped</span><b id="n-block">0</b></div>
+      <div class="eyebrow reveal">Safe payments for AI agents</div>
+      <h1 class="reveal d1">Your agents pay.<br><em>You hold the leash.</em></h1>
+      <p class="lede reveal d2">Let AI agents shop with your PayPal. Every payment is held, checked against your rules, read by AI for tricks, and only then paid, sent to you, or stopped.</p>
+      <div class="ctas reveal d3">
+        <a class="btn solid" href="/vault/start" id="vault-btn"><span id="vault-text">Connect PayPal</span><span class="arr">&rarr;</span></a>
+        <a class="btn" href="#payments">See payments</a>
+      </div>
+    </div>
+    <div class="reveal d2">
+      <div class="card-stage" id="stage">
+        <div class="agent-card" id="card">
+          <div class="glow"></div>
+          <div class="sheen"></div>
+          <div class="ac-in">
+            <div class="ac-row"><div class="ac-brand">leash<span>.</span></div><div class="ac-tag">Agent card</div></div>
+            <div class="chip"></div>
+            <div class="ac-limit"><small>Spending limit per payment</small><b class="num" id="card-limit">$0.00</b></div>
+            <div class="ac-row" style="margin-top:14px">
+              <div class="ac-status" id="card-status"><i></i><span>Active</span></div>
+              <div class="ac-tag">PayPal vault</div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="scroll-cue">Scroll<i></i></div>
+      <div class="card-caption" id="caption">Watching your agents.</div>
     </div>
   </section>
 
-  <section class="wrap section" id="ledger">
-    <div class="sec-head">
-      <div><div class="label">Live</div><h2>Agent payments</h2></div>
-      <div class="label" id="total"></div>
+  <section class="stats">
+    <div class="stat"><div class="eyebrow">Spent this month</div><b class="num" id="spent">$0.00</b><div class="meter"><i id="meter"></i></div></div>
+    <div class="stat"><div class="eyebrow">Budget left</div><b class="num" id="left">$0.00</b></div>
+    <div class="stat"><div class="eyebrow">Paid</div><b class="num paid" id="n-paid">0</b></div>
+    <div class="stat"><div class="eyebrow">Waiting for you</div><b class="num wait" id="n-wait">0</b></div>
+    <div class="stat"><div class="eyebrow">Stopped</div><b class="num stop" id="n-stop">0</b></div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="sec-title">
+      <div><div class="eyebrow">How it works</div><h2>Four checks before<br>a single cent moves.</h2></div>
+      <p>Hard limits live in code. The AI can only make a decision stricter, never approve what your rules refuse. If anything fails, nothing is paid.</p>
     </div>
-    <div class="grid">
-      <div id="payments" aria-live="polite"><div class="glass empty">No payments yet. Run the demo agent:<br><code>python agents/demo_shopper.py</code></div></div>
-      <aside class="glass side">
-        <div class="label">Enforced in code</div>
-        <h2 style="font-size:30px">Your rules</h2>
-        <ul class="rules" id="rules"></ul>
-        <label class="label" for="rules-text" style="display:block;margin-bottom:8px">Change them in plain English</label>
-        <textarea id="rules-text" placeholder="Never more than $80 at once. Ask me above $40. Only books and groceries."></textarea>
-        <p class="hint">AI reads it and shows what it understood. Nothing changes until you confirm.</p>
-        <button class="btn primary small" id="parse">Read my rules</button>
-        <div class="draft" id="draft" hidden>
-          <div class="label">Leash understood</div>
-          <p id="draft-summary"></p>
-          <ul class="rules" id="draft-rules"></ul>
-          <div class="acts">
-            <button class="btn go small" id="confirm">Use these rules</button>
-            <button class="btn small" id="discard">Discard</button>
-          </div>
-        </div>
-        <div class="vault"><span class="label">PayPal</span><b id="vault">...</b></div>
-      </aside>
+    <div class="how-grid">
+      <div class="how-item"><div class="n">01</div><span class="tag stop">can stop</span><h3>Your rules</h3><p>Limit per payment, monthly budget, categories, allowed and blocked stores, price changes, repeat purchases.</p></div>
+      <div class="how-item"><div class="n">02</div><h3>Money on hold</h3><p>PayPal authorizes the amount from your saved account. Nothing is charged yet.</p></div>
+      <div class="how-item"><div class="n">03</div><span class="tag wait">only stricter</span><h3>AI reads the page</h3><p>Gemini looks for hidden instructions aimed at agents and checks the item matches your task.</p></div>
+      <div class="how-item"><div class="n">04</div><h3>Pay, ask or void</h3><p>The hold is captured, kept until you approve, or released. You see why, every time.</p></div>
     </div>
   </section>
-</div>
+
+  <section class="work" id="payments">
+    <div>
+      <div class="sec-title" style="margin-bottom:var(--s6)"><div><div class="eyebrow">Live</div><h2>Agent payments</h2></div><div class="eyebrow" id="total"></div></div>
+      <div id="list" aria-live="polite"><div class="empty">No payments yet. Run the demo agent:<br><code>python agents/demo_shopper.py</code></div></div>
+    </div>
+    <aside class="side" id="rules">
+      <div class="eyebrow">Enforced in code</div>
+      <h3>Your rules</h3>
+      <ul class="rules" id="rule-list"></ul>
+      <label class="lb" for="rules-text">Change them in plain English</label>
+      <textarea id="rules-text" placeholder="Never more than $80 at once. Ask me above $40. Only books and groceries."></textarea>
+      <p class="hint">AI reads your words and shows what it understood. Nothing changes until you confirm.</p>
+      <button class="btn solid sm" id="parse">Read my rules</button>
+      <div class="draft" id="draft" hidden>
+        <div class="eyebrow">Leash understood</div>
+        <p id="draft-summary"></p>
+        <ul class="rules" id="draft-list" style="margin-bottom:var(--s5)"></ul>
+        <div class="acts" style="margin-top:0">
+          <button class="btn go sm" id="confirm">Use these rules</button>
+          <button class="btn sm" id="discard">Discard</button>
+        </div>
+      </div>
+      <div class="vault"><span>PayPal account</span><b id="vault">...</b></div>
+    </aside>
+  </section>
+</main>
 
 <div class="toasts" id="toasts"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = n => "$" + Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 let draft = null, frozen = false, seen = null;
 
 const store = {
@@ -282,234 +352,104 @@ async function api(path, opts = {}) {
   return r.json();
 }
 
-/* ---------- 3D scene ---------- */
-const scene3d = (() => {
-  if (!window.THREE) return { react() {}, theme() {}, frozen() {} };
-  const canvas = $("scene");
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(42, 1, .1, 100);
-  camera.position.set(0, 0, 9);
-
-  // Core: displaced sphere with a fresnel glow shader
-  const coreUniforms = { uTime: { value: 0 }, uColor: { value: new THREE.Color() }, uAmp: { value: .12 }, uLight: { value: 0 } };
-  const core = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(1.35, 6),
-    new THREE.ShaderMaterial({
-      uniforms: coreUniforms, transparent: true,
-      vertexShader: `
-        uniform float uTime; uniform float uAmp;
-        varying vec3 vN; varying vec3 vV; varying float vD;
-        void main() {
-          vec3 p = position;
-          float d = sin(p.x * 3.1 + uTime * 1.3) * sin(p.y * 2.7 + uTime * 1.1) * sin(p.z * 3.3 + uTime * .9);
-          p += normal * d * uAmp;
-          vD = d;
-          vec4 mv = modelViewMatrix * vec4(p, 1.0);
-          vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz);
-          gl_Position = projectionMatrix * mv;
-        }`,
-      fragmentShader: `
-        uniform vec3 uColor; uniform float uLight;
-        varying vec3 vN; varying vec3 vV; varying float vD;
-        void main() {
-          float f = pow(1.0 - max(dot(vN, vV), 0.0), 2.2);
-          vec3 deep = mix(vec3(0.02, 0.03, 0.06), vec3(0.92, 0.94, 0.98), uLight);
-          vec3 col = mix(deep, uColor, f * 1.15 + vD * .25);
-          col += uColor * pow(f, 4.0) * .9;
-          gl_FragColor = vec4(col, 0.97);
-        }`,
-    })
-  );
-  scene.add(core);
-
-  // Halo sprite
-  const haloTex = (() => {
-    const c = document.createElement("canvas"); c.width = c.height = 256;
-    const g = c.getContext("2d"), grd = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-    grd.addColorStop(0, "rgba(255,255,255,.55)"); grd.addColorStop(.35, "rgba(255,255,255,.12)"); grd.addColorStop(1, "rgba(255,255,255,0)");
-    g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
-    return new THREE.CanvasTexture(c);
-  })();
-  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-  halo.scale.set(7, 7, 1);
-  scene.add(halo);
-
-  // Gyroscope rings
-  const rings = [];
-  [[2.15, .012, [1.2, .3, 0]], [2.55, .008, [.4, 1.1, .2]], [2.95, .006, [-.6, .2, .9]]].forEach(([r, t, rot]) => {
-    const m = new THREE.Mesh(new THREE.TorusGeometry(r, t, 8, 220), new THREE.MeshBasicMaterial({ transparent: true, opacity: .55 }));
-    m.rotation.set(...rot); rings.push(m); scene.add(m);
-  });
-  // Bead riding the first ring
-  const bead = new THREE.Mesh(new THREE.SphereGeometry(.06, 16, 16), new THREE.MeshBasicMaterial());
-  rings[0].add(bead);
-
-  // Particle field
-  const N = 1800, pos = new Float32Array(N * 3), seeds = new Float32Array(N);
-  for (let i = 0; i < N; i++) {
-    const r = 3.4 + Math.random() * 5.5, th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
-    pos[i * 3] = r * Math.sin(ph) * Math.cos(th); pos[i * 3 + 1] = r * Math.sin(ph) * Math.sin(th) * .6; pos[i * 3 + 2] = r * Math.cos(ph);
-    seeds[i] = Math.random();
-  }
-  const pg = new THREE.BufferGeometry();
-  pg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  const points = new THREE.Points(pg, new THREE.PointsMaterial({ size: .028, transparent: true, opacity: .7, depthWrite: false }));
-  scene.add(points);
-
-  // Shockwaves
-  const waves = [];
-  function shock(color) {
-    const w = new THREE.Mesh(new THREE.RingGeometry(1.4, 1.46, 128), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: .9, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
-    w.lookAt(camera.position); w.userData.t = 0; scene.add(w); waves.push(w);
-  }
-
-  let baseS = 1, base = new THREE.Color(), target = new THREE.Color(), pulse = 0, shake = 0, speed = 1, isLight = false, isFrozen = false;
-  function theme() {
-    isLight = document.documentElement.dataset.theme === "light" ||
-      (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: light)").matches);
-    renderer.setClearColor(new THREE.Color(css("--bg")));
-    base.set(css("--core")); target.copy(base); coreUniforms.uColor.value.copy(base);
-    coreUniforms.uLight.value = isLight ? 1 : 0;
-    halo.material.opacity = isLight ? .0 : .9;
-    const lineCol = new THREE.Color(isLight ? "#1a2a55" : "#cfe9ff");
-    rings.forEach(r => r.material.color.copy(lineCol)); bead.material.color.copy(lineCol);
-    points.material.color.copy(lineCol); points.material.opacity = isLight ? .45 : .7;
-  }
-  function react(status) {
-    const col = new THREE.Color(css({ paid: "--paid", waiting: "--wait", blocked: "--block", cancelled: "--block" }[status] || "--core"));
-    target.copy(col); pulse = 1; speed = 4;
-    if (status === "blocked" || status === "cancelled") shake = 1;
-    shock(col);
-    setTimeout(() => target.copy(isFrozen ? new THREE.Color(css("--block")) : base), 2600);
-  }
-  function setFrozen(f) { isFrozen = f; target.copy(f ? new THREE.Color(css("--block")) : base); }
-
-  let mx = 0, my = 0;
-  addEventListener("pointermove", e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
-  function resize() {
-    const w = innerWidth, h = innerHeight;
-    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-    core.position.y = w < 980 ? 1.6 : 1.45; baseS = w < 980 ? .62 : .72;
-    halo.position.copy(core.position); halo.scale.set(7 * baseS, 7 * baseS, 1);
-    rings.forEach(r => { r.position.copy(core.position); r.scale.setScalar(baseS); });
-  }
-  addEventListener("resize", resize); resize(); theme();
-
-  const clock = new THREE.Clock();
-  (function loop() {
-    const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
-    coreUniforms.uTime.value = t * (reduced ? .2 : 1) * (isFrozen ? .25 : 1);
-    coreUniforms.uColor.value.lerp(target, .06);
-    halo.material.color.copy(coreUniforms.uColor.value);
-    pulse *= .94; shake *= .9; speed += (1 - speed) * .03;
-    coreUniforms.uAmp.value = .12 + pulse * .35;
-    const s = baseS * (1 + pulse * .12); core.scale.set(s, s, s);
-    core.rotation.y += dt * .15 * speed; core.rotation.x += dt * .05;
-    if (shake > .01) { core.position.x = (Math.random() - .5) * shake * .25; } else core.position.x = 0;
-    const k = isFrozen ? .15 : 1;
-    rings[0].rotation.z += dt * .35 * speed * k; rings[1].rotation.x += dt * .22 * speed * k; rings[2].rotation.y += dt * .18 * speed * k;
-    bead.position.set(Math.cos(t * 1.4 * k) * 2.15, Math.sin(t * 1.4 * k) * 2.15, 0);
-    points.rotation.y += dt * .025 * speed * k; points.rotation.x = Math.sin(t * .1) * .1;
-    for (let i = waves.length - 1; i >= 0; i--) {
-      const w = waves[i]; w.userData.t += dt;
-      const sc = baseS * (1 + w.userData.t * 3.2); w.scale.set(sc, sc, sc); w.position.copy(core.position);
-      w.material.opacity = Math.max(0, .9 - w.userData.t * .7);
-      if (w.material.opacity <= 0) { scene.remove(w); w.geometry.dispose(); w.material.dispose(); waves.splice(i, 1); }
-    }
-    camera.position.x += (mx * 1.4 - camera.position.x) * .04;
-    camera.position.y += (-my * .9 - camera.position.y) * .04 - scrollY * 0;
-    camera.lookAt(0, core.position.y * .6, 0);
-    scene.position.y = scrollY / innerHeight * 2.2;
-    renderer.render(scene, camera);
-    requestAnimationFrame(loop);
-  })();
-  return { react, theme, frozen: setFrozen };
-})();
-
-/* ---------- Theme ---------- */
+// Theme
 const themes = ["system", "light", "dark"];
 function applyTheme(t) {
-  if (t === "system") delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = t;
+  if (t === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
   $("theme-name").textContent = t;
-  scene3d.theme();
 }
 let theme = store.get("leash-theme") || "system";
 applyTheme(theme);
 $("theme").onclick = () => { theme = themes[(themes.indexOf(theme) + 1) % 3]; store.set("leash-theme", theme); applyTheme(theme); };
-matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => scene3d.theme());
 
-/* ---------- UI ---------- */
-function toast(kind, title, text) {
-  const el = document.createElement("div");
-  el.className = "toast glass";
-  el.innerHTML = `<b style="color:var(${({ paid: "--paid", waiting: "--wait", blocked: "--block" })[kind] || "--core"})">${esc(title)}</b><span>${esc(text)}</span>`;
-  $("toasts").appendChild(el);
-  setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 350); }, 4200);
+// Glossy card: tilt and light follow the pointer
+const card = $("card");
+if (!reduced && matchMedia("(pointer: fine)").matches) {
+  $("stage").addEventListener("pointermove", e => {
+    const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    card.style.setProperty("--ry", `${(x - .5) * 26}deg`); card.style.setProperty("--rx", `${(.5 - y) * 20}deg`);
+    card.style.setProperty("--gx", `${x * 100}%`); card.style.setProperty("--gy", `${y * 100}%`);
+  });
+  $("stage").addEventListener("pointerleave", () => ["--rx", "--ry", "--gx", "--gy"].forEach(p => card.style.removeProperty(p)));
 }
-let evTimer;
-function showEvent(p) {
-  const map = { paid: ["PAID", "--paid"], waiting: ["NEEDS YOUR OK", "--wait"], blocked: ["STOPPED", "--block"], cancelled: ["REJECTED", "--block"] };
-  const [k, c] = map[p.status] || [p.status.toUpperCase(), "--core"];
-  $("ev-k").textContent = k; $("ev-k").style.color = `var(${c})`;
-  $("ev-t").textContent = `#${p.id} ${p.item}, ${money(p.amount)}`;
-  $("event").classList.add("on");
-  clearTimeout(evTimer); evTimer = setTimeout(() => $("event").classList.remove("on"), 4000);
+const statusColor = { paid: "var(--paid)", waiting: "var(--wait)", blocked: "var(--stop)", cancelled: "var(--stop)" };
+const statusWord = { paid: "Paid", waiting: "Waiting for you", blocked: "Stopped", cancelled: "Rejected" };
+let reactTimer;
+function cardReact(p) {
+  card.style.setProperty("--g", statusColor[p.status] || "var(--text-primary)");
+  card.classList.remove("shake"); void card.offsetWidth;
+  card.classList.add("react");
+  if (p.status === "blocked" || p.status === "cancelled") card.classList.add("shake");
+  $("card-status").querySelector("span").textContent = statusWord[p.status] || p.status;
+  $("caption").textContent = `#${p.id} ${p.item}, ${money(p.amount)}: ${(statusWord[p.status] || p.status).toLowerCase()}.`;
+  clearTimeout(reactTimer);
+  reactTimer = setTimeout(() => {
+    card.classList.remove("react");
+    card.style.setProperty("--g", frozen ? "var(--stop)" : "var(--paid)");
+    $("card-status").querySelector("span").textContent = frozen ? "Frozen" : "Active";
+  }, 3000);
+}
+
+function toast(status, text) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.innerHTML = `<i style="background:${statusColor[status] || "var(--paid)"}"></i><span>${esc(text)}</span>`;
+  $("toasts").appendChild(el);
+  setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 260); }, 4000);
 }
 
 function countTo(el, value, fmt = v => Math.round(v)) {
   const from = Number(el.dataset.v || 0); el.dataset.v = value;
   if (reduced || from === value) { el.textContent = fmt(value); return; }
   const t0 = performance.now();
-  const step = now => { const t = Math.min(1, (now - t0) / 1200), e = 1 - Math.pow(1 - t, 4); el.textContent = fmt(from + (value - from) * e); if (t < 1) requestAnimationFrame(step); };
+  const step = now => { const t = Math.min(1, (now - t0) / 1000), e = 1 - Math.pow(1 - t, 3); el.textContent = fmt(from + (value - from) * e); if (t < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
 
 function ruleRows(p) {
   const list = (a, none) => a && a.length ? a.map(esc).join(", ") : none;
   return [["Max per payment", money(p.per_payment_limit)], ["Ask me above", money(p.ask_above)], ["Monthly budget", money(p.monthly_budget)],
-          ["Categories", list(p.allowed_categories, "none")], ["Stores", list(p.allowed_merchants, "any not blocked")], ["Blocked", list(p.blocked_merchants, "none")]]
+          ["Categories", list(p.allowed_categories, "none")], ["Stores", list(p.allowed_merchants, "any not blocked")], ["Blocked stores", list(p.blocked_merchants, "none")]]
     .map(([k, v]) => `<li><span>${k}</span><b>${v}</b></li>`).join("");
 }
 
 async function loadStatus() {
   const s = await api("/status");
-  if (frozen !== s.frozen) scene3d.frozen(s.frozen);
   frozen = s.frozen;
   document.body.classList.toggle("frozen", frozen);
   $("freeze").setAttribute("aria-checked", frozen);
+  if (!card.classList.contains("react")) {
+    card.style.setProperty("--g", frozen ? "var(--stop)" : "var(--paid)");
+    $("card-status").querySelector("span").textContent = frozen ? "Frozen" : "Active";
+  }
   $("vault").textContent = s.vault_saved ? "Connected" : "Not connected";
-  $("vault-btn").textContent = s.vault_saved ? "Reconnect PayPal" : "Connect PayPal";
+  $("vault-text").textContent = s.vault_saved ? "Reconnect PayPal" : "Connect PayPal";
   const budget = s.policy.monthly_budget || 1, used = Math.min(1, s.spent_this_month / budget);
   countTo($("spent"), s.spent_this_month, money);
-  $("of").textContent = `of ${money(budget)} budget`;
-  $("bar").style.width = used * 100 + "%";
-  $("bar").style.background = $("bar").style.boxShadow = "";
-  const c = used > .9 ? "var(--block)" : used > .7 ? "var(--wait)" : "var(--paid)";
-  $("bar").style.background = c; $("bar").style.boxShadow = `0 0 16px ${c}`;
-  $("rules").innerHTML = ruleRows(s.policy);
+  countTo($("left"), Math.max(0, budget - s.spent_this_month), money);
+  countTo($("card-limit"), s.policy.per_payment_limit, money);
+  $("meter").style.width = used * 100 + "%";
+  $("meter").style.background = used > .9 ? "var(--stop)" : used > .7 ? "var(--wait)" : "var(--text-primary)";
+  $("rule-list").innerHTML = ruleRows(s.policy);
 }
 
-function trace(p) {
+function flow(p) {
   const ai = p.reasons.filter(r => r.startsWith("AI:")), held = !!p.order_id;
-  const pts = [];
-  pts.push(!held && p.status === "blocked" ? ["no", "Rules"] : ["ok", "Rules"]);
-  pts.push(held ? ["ok", "Held"] : ["", "Held"]);
-  pts.push(!held ? ["", "AI check"] : ai.length ? [p.status === "blocked" ? "no" : "warn", "AI check"] : ["ok", "AI check"]);
-  pts.push({ paid: ["ok", "Paid"], waiting: ["warn", "Your call"], blocked: ["no", held ? "Hold voided" : "Not charged"], cancelled: ["no", "Rejected"] }[p.status] || ["", p.status]);
-  return pts.map(([c, t]) => `<div class="tp ${c}"><i></i>${t}</div>`).join("");
+  const f = [];
+  f.push(!held && p.status === "blocked" ? ["no", "Rules"] : ["ok", "Rules"]);
+  f.push(held ? ["ok", "Held"] : ["", "Held"]);
+  f.push(!held ? ["", "AI check"] : ai.length ? [p.status === "blocked" ? "no" : "warn", "AI check"] : ["ok", "AI check"]);
+  f.push({ paid: ["ok", "Paid"], waiting: ["warn", "Your call"], blocked: ["no", held ? "Hold released" : "Not charged"], cancelled: ["no", "Rejected"] }[p.status] || ["", p.status]);
+  return f.map(([c, t]) => `<div class="${c}"><span>${t}</span></div>`).join("");
 }
 function why(p) {
   return p.reasons.map(r => {
-    if (r.startsWith("AI ok:")) return `<div><span class="src ai">AI</span><span>${esc(r.slice(6).trim())}</span></div>`;
-    if (r.startsWith("AI:")) return `<div><span class="src ai">AI</span><span>${esc(r.slice(3).trim())}</span></div>`;
-    if (r.startsWith("You ")) return `<div><span class="src">YOU</span><span>${esc(r)}</span></div>`;
-    return `<div><span class="src">RULE</span><span>${esc(r)}</span></div>`;
+    if (r.startsWith("AI ok:")) return `<div><b class="ai">AI</b><span>${esc(r.slice(6).trim())}</span></div>`;
+    if (r.startsWith("AI:")) return `<div><b class="ai">AI</b><span>${esc(r.slice(3).trim())}</span></div>`;
+    if (r.startsWith("You ")) return `<div><b>YOU</b><span>${esc(r)}</span></div>`;
+    return `<div><b>RULE</b><span>${esc(r)}</span></div>`;
   }).join("");
 }
-const statusName = { paid: "Paid", waiting: "Waiting for you", blocked: "Stopped", cancelled: "Rejected" };
 
 async function loadPayments() {
   const list = await api("/payments");
@@ -518,40 +458,38 @@ async function loadPayments() {
   const fresh = list.filter(p => !seen.has(p.id + p.status));
   list.forEach(p => seen.add(p.id + p.status));
   const n = s => list.filter(p => p.status === s).length;
-  countTo($("n-paid"), n("paid")); countTo($("n-wait"), n("waiting")); countTo($("n-block"), n("blocked") + n("cancelled"));
+  countTo($("n-paid"), n("paid")); countTo($("n-wait"), n("waiting")); countTo($("n-stop"), n("blocked") + n("cancelled"));
   $("total").textContent = list.length ? `${list.length} payments` : "";
   if (!list.length) return;
   const freshIds = new Set(fresh.map(p => p.id));
-  $("payments").innerHTML = list.map(p => `
-    <article class="glass pay ${esc(p.status)} ${!first && freshIds.has(p.id) ? "enter" : ""}">
-      <div class="pay-top">
+  $("list").innerHTML = list.map(p => `
+    <article class="pay ${esc(p.status)} ${!first && freshIds.has(p.id) ? "enter" : ""}">
+      <div class="pay-head">
         <div><div class="pay-item">${esc(p.item)}</div><div class="pay-meta">${esc(p.merchant)} &middot; ${esc(p.agent)} &middot; #${p.id}</div></div>
-        <div><div class="pay-amt">${money(p.amount)}</div><div class="status"><i></i>${statusName[p.status] || esc(p.status)}</div></div>
+        <div><div class="pay-amt num">${money(p.amount)}</div><span class="badge ${esc(p.status)}">${statusWord[p.status] || esc(p.status)}</span></div>
       </div>
-      <div class="trace">${trace(p)}</div>
+      <div class="flow">${flow(p)}</div>
       <div class="why">${why(p)}</div>
       <div class="task">Task: ${esc(p.task)}</div>
       ${p.status === "waiting" ? `<div class="acts">
-        <button class="btn go small" onclick="decide(${p.id}, 'approve', this)">Approve and pay</button>
-        <button class="btn small" onclick="decide(${p.id}, 'reject', this)">Reject</button></div>` : ""}
+        <button class="btn go sm" onclick="decide(${p.id}, 'approve', this)">Approve and pay</button>
+        <button class="btn sm" onclick="decide(${p.id}, 'reject', this)">Reject</button></div>` : ""}
     </article>`).join("");
   if (first) return;
   fresh.sort((a, b) => a.id - b.id).forEach((p, i) => setTimeout(() => {
-    scene3d.react(p.status); showEvent(p);
-    if (p.status === "paid") toast("paid", "Paid", `${p.item}, ${money(p.amount)}`);
-    else if (p.status === "waiting") toast("waiting", "Needs your OK", `${p.item}, ${money(p.amount)}`);
-    else if (p.status === "blocked") toast("blocked", "Stopped", p.item);
-  }, i * 900));
+    cardReact(p);
+    toast(p.status, `${statusWord[p.status] || p.status}: ${p.item}, ${money(p.amount)}`);
+  }, i * 1200));
 }
 
 async function decide(id, action, btn) {
   btn.disabled = true; btn.innerHTML = `<span class="spin"></span>${action === "approve" ? "Paying" : "Releasing"}`;
-  try { await api(`/payments/${id}/${action}`, { method: "POST" }); } catch (e) { toast("blocked", "Error", e.message); }
+  try { await api(`/payments/${id}/${action}`, { method: "POST" }); } catch (e) { toast("blocked", e.message); }
   refresh();
 }
 $("freeze").onclick = async () => {
   await api(frozen ? "/unfreeze" : "/freeze", { method: "POST" });
-  toast(frozen ? "paid" : "blocked", frozen ? "Live" : "Frozen", frozen ? "Agents can pay again." : "No agent can pay until you unfreeze.");
+  toast(frozen ? "paid" : "blocked", frozen ? "Agents can pay again." : "All agent payments frozen.");
   refresh();
 };
 $("parse").onclick = async () => {
@@ -559,13 +497,13 @@ $("parse").onclick = async () => {
   const btn = $("parse"); btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Reading`;
   try {
     draft = await api("/policy/parse", { method: "POST", body: JSON.stringify({ text }) });
-    $("draft-summary").textContent = draft.summary; $("draft-rules").innerHTML = ruleRows(draft); $("draft").hidden = false;
-  } catch (e) { toast("blocked", "Error", "Could not read the rules: " + e.message); }
+    $("draft-summary").textContent = draft.summary; $("draft-list").innerHTML = ruleRows(draft); $("draft").hidden = false;
+  } catch (e) { toast("blocked", "Could not read the rules: " + e.message); }
   btn.disabled = false; btn.textContent = "Read my rules";
 };
 $("confirm").onclick = async () => {
   await api("/policy", { method: "PUT", body: JSON.stringify(draft) });
-  $("draft").hidden = true; $("rules-text").value = ""; toast("paid", "Saved", "New rules apply to every payment now."); refresh();
+  $("draft").hidden = true; $("rules-text").value = ""; toast("paid", "Rules saved. Every new payment uses them."); refresh();
 };
 $("discard").onclick = () => { $("draft").hidden = true; draft = null; };
 
