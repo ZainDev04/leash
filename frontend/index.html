@@ -409,6 +409,9 @@ function countTo(el, value, fmt = v => Math.round(v)) {
   requestAnimationFrame(step);
 }
 
+// Only touch the DOM when the content changed, so hover states and buttons stay put between polls
+function setHTML(el, html) { if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; } }
+
 function ruleRows(p) {
   const list = (a, none) => a && a.length ? a.map(esc).join(", ") : none;
   return [["Max per payment", money(p.per_payment_limit)], ["Ask me above", money(p.ask_above)], ["Monthly budget", money(p.monthly_budget)],
@@ -433,7 +436,7 @@ async function loadStatus() {
   countTo($("card-limit"), s.policy.per_payment_limit, money);
   $("meter").style.width = used * 100 + "%";
   $("meter").style.background = used > .9 ? "var(--stop)" : used > .7 ? "var(--wait)" : "var(--accent)";
-  $("rule-list").innerHTML = ruleRows(s.policy);
+  setHTML($("rule-list"), ruleRows(s.policy));
 }
 
 function flow(p) {
@@ -465,7 +468,7 @@ async function loadPayments() {
   $("total").textContent = list.length ? `${list.length} payments` : "";
   if (!list.length) return;
   const freshIds = new Set(fresh.map(p => p.id));
-  $("list").innerHTML = list.map(p => `
+  setHTML($("list"), list.map(p => `
     <article class="pay ${esc(p.status)} ${!first && freshIds.has(p.id) ? "enter" : ""}">
       <div class="pay-head">
         <div><div class="pay-item">${esc(p.item)}</div><div class="pay-meta">${esc(p.merchant)} &middot; ${esc(p.agent)} &middot; #${p.id}</div></div>
@@ -477,7 +480,7 @@ async function loadPayments() {
       ${p.status === "waiting" ? `<div class="acts">
         <button class="btn go sm" onclick="decide(${p.id}, 'approve', this)">Approve and pay</button>
         <button class="btn sm" onclick="decide(${p.id}, 'reject', this)">Reject</button></div>` : ""}
-    </article>`).join("");
+    </article>`).join(""));
   if (first) return;
   fresh.sort((a, b) => a.id - b.id).forEach((p, i) => setTimeout(() => {
     cardReact(p);
