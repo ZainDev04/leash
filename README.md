@@ -26,7 +26,7 @@ Built for the PayPal AI Hackathon 2026. PayPal sandbox only, no real money.
 
 ## Run it
 
-You need Python 3.11+, a PayPal developer account and a Gemini API key.
+You need Python 3.11 or newer, a PayPal developer account and a Gemini API key.
 
 1. PayPal sandbox app
    - Log in at https://developer.paypal.com, switch to Sandbox, open Apps & Credentials and create an app (type Merchant).
