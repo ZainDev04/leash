@@ -35,6 +35,10 @@ def _client():
         ),
         environment=Environment.SANDBOX,
         timeout=30,
+        # POST is safe to retry here because every change carries a request ID, so PayPal never does it twice
+        max_retries=2,
+        retry_statuses=[408, 429, 500, 502, 503, 504],
+        retry_methods=["GET", "POST"],
     )
 
 

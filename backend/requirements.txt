@@ -4,3 +4,5 @@ httpx
 python-dotenv
 mcp>=2,<3
 paypal-server-sdk==2.4.0
+psycopg[binary]
+psycopg-pool

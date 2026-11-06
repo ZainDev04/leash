@@ -13,6 +13,11 @@ os.environ["PAYPAL_CLIENT_ID"] = "unused"
 os.environ["PAYPAL_CLIENT_SECRET"] = "unused"
 os.environ["LLM_API_KEY"] = "unused"
 os.environ["LEASH_VERIFIED_STORES"] = ""
+# Set this to run every test on Postgres. CI does. The database is emptied, so never point it at real data.
+if os.getenv("LEASH_TEST_DATABASE_URL"):
+    os.environ["DATABASE_URL"] = os.environ["LEASH_TEST_DATABASE_URL"]
+else:
+    os.environ["DATABASE_URL"] = ""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -65,7 +70,8 @@ def fake(monkeypatch):
 @pytest.fixture(autouse=True)
 def clean_db(fake):
     with db.conn() as c:
-        c.executescript("DELETE FROM payments; DELETE FROM settings; DELETE FROM rate_limits;")
+        for table in ("payments", "settings", "rate_hits"):
+            db.run(c, f"DELETE FROM {table}")
     db.init()
     db.put("policy", POLICY)
     db.put("vault_id", "vault-1")

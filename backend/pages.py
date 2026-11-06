@@ -13,6 +13,8 @@ from urllib.parse import urlparse
 
 import httpx
 
+from .security import public_url
+
 MAX_BYTES = 1_000_000
 # The most page text the AI reads. A longer page could hide instructions past the cut, so it goes to the user.
 AI_READS = 30_000
@@ -20,7 +22,9 @@ LD_JSON = re.compile(r'<script[^>]*application/ld\+json[^>]*>(.*?)</script>', re
 
 
 def verified_hosts():
-    return [h.strip().lower() for h in os.getenv("LEASH_VERIFIED_STORES", "").split(",") if h.strip()]
+    """Hosts from LEASH_VERIFIED_STORES. The word self means this site, for the demo store."""
+    hosts = [h.strip().lower() for h in os.getenv("LEASH_VERIFIED_STORES", "").split(",") if h.strip()]
+    return [urlparse(public_url()).netloc.lower() if h == "self" else h for h in hosts]
 
 
 def fetch(url):

@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import time
 import uuid
 from pathlib import Path
@@ -35,7 +34,7 @@ PUBLIC_PATHS = ("/", "/robots.txt", "/sitemap.xml", "/site.webmanifest")
 
 
 def base_url():
-    return os.getenv("PUBLIC_URL", "http://localhost:8000").rstrip("/")
+    return security.public_url()
 
 
 @app.middleware("http")
@@ -344,8 +343,17 @@ def finish(pid, status, reasons):
     return db.payment(pid)
 
 
+def clear_stuck_payments():
+    """A server that stopped mid-payment leaves it on "checking". Close it so it stops using up the budget."""
+    for p in db.stuck_payments():
+        if db.move_status(p["id"], "checking", "processing"):
+            note = release(p["id"], p["authorization_id"]) if p["authorization_id"] else []
+            finish(p["id"], "blocked", ["Leash stopped before finishing this payment, so nothing was paid."] + note)
+
+
 @app.get("/payments", dependencies=[Depends(require_user)])
 def payments():
+    clear_stuck_payments()
     return db.payments()
 
 

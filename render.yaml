@@ -1,0 +1,36 @@
+# Deploy with Render: New > Blueprint, then pick this repo. Render asks for the values marked sync: false.
+services:
+  - type: web
+    name: leash
+    runtime: python
+    plan: free
+    # Render's load balancer sends traffic only to copies whose /ready answers.
+    # To run more than one copy, use a paid plan and add: numInstances: 2
+    healthCheckPath: /ready
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT --forwarded-allow-ips='*'
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DATABASE_URL
+        fromDatabase:
+          name: leash-db
+          property: connectionString
+      - key: LEASH_VERIFIED_STORES
+        value: self
+      - key: LLM_MODEL
+        value: gemini-3.5-flash,gemini-3.1-flash-lite
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LEASH_ADMIN_PASSWORD
+        sync: false
+      - key: LEASH_AGENT_KEYS
+        sync: false
+
+databases:
+  - name: leash-db
+    plan: free

@@ -52,8 +52,14 @@ def valid_session(value):
             and expires.isdigit() and int(expires) > time.time())
 
 
+def public_url():
+    """This site's own address. Render sets RENDER_EXTERNAL_URL by itself."""
+    url = os.getenv("PUBLIC_URL") or os.getenv("RENDER_EXTERNAL_URL") or "http://localhost:8000"
+    return url.rstrip("/")
+
+
 def secure_cookies():
-    return os.getenv("PUBLIC_URL", "").startswith("https://")
+    return public_url().startswith("https://")
 
 
 def agent_for_key(given):

@@ -100,6 +100,17 @@ def test_capture_and_void(monkeypatch):
     assert client.calls[1][1]["authorization_id"] == "AUTH1"
 
 
+def test_client_is_fixed_to_the_sandbox_and_retries_safely(monkeypatch):
+    monkeypatch.setenv("PAYPAL_CLIENT_ID", "id")
+    monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "secret")
+    paypal._client.cache_clear()
+    config = paypal._client().config
+    paypal._client.cache_clear()
+    assert config.environment.name == "SANDBOX"
+    assert config.max_retries == 2
+    assert "POST" in config.retry_methods
+
+
 def test_each_change_has_its_own_request_id(monkeypatch):
     client = use(monkeypatch)
     CAPTURE("A")

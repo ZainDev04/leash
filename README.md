@@ -113,9 +113,17 @@ Open to anyone: `/` (home page), `/store` (demo store), `/login`, `/health`, `/r
 - Changes from another website are refused, and every response carries security headers, including a Content-Security-Policy with no inline scripts.
 - Payments that arrive at the same moment cannot share the same unspent budget, and a double click on Approve can only capture once. If capture fails, the hold is voided.
 - Logs are one JSON line per request with a request ID. `/health` says the process is up and `/ready` says it can reach the database.
-- Set `PUBLIC_URL` to the `https://` address when hosted. That turns on secure cookies and HSTS, and sets the addresses used for PayPal links and search engines.
+- When hosted on an `https://` address, secure cookies and HSTS turn on. Render's address is picked up by itself. Elsewhere, set `PUBLIC_URL`.
+- PayPal calls retry on temporary errors. Each change carries a request ID, so a retry cannot pay twice.
+- A payment left unfinished by a server crash is closed and its hold released.
 
-Sessions and rate limits keep nothing in server memory, so the app is ready to run behind a load balancer. The database is SQLite, which only works on one server. Running several copies needs the move to Postgres.
+## Deploy and scale
+
+`render.yaml` deploys the app and a Postgres database on Render (New > Blueprint). Paste your PayPal and Gemini keys, a dashboard password and `LEASH_AGENT_KEYS` when asked, then open the site and connect PayPal.
+
+Sessions, rate limits and rules live in signed cookies or the database, so any copy of the server can answer any request. To run several copies behind Render's load balancer, use a paid plan and set `numInstances` in `render.yaml`. The load balancer stops sending traffic to a copy when its `/ready` check fails.
+
+`tests/test_two_copies.py` runs two copies as separate processes and sends requests to them in turn. It checks that the budget, repeat check, kill switch, login and rate limits hold across both, that Approve captures once, and that the second copy keeps working when the first one dies. CI runs it on SQLite and on real Postgres. Free Render services sleep when idle, so the first request after a quiet spell can take about a minute.
 
 ## Tests
 

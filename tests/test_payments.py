@@ -104,6 +104,19 @@ def test_second_click_cannot_pay_twice(user, fake):
     assert len(fake.captures) == 1
 
 
+def test_payment_left_unfinished_by_a_crash_is_closed(user, fake):
+    p = buy(user).json()
+    db.update_payment(p["id"], status="checking", created_at="2020-01-01 00:00:00", authorization_id="auth-9")
+    recent = buy(user, item="Other").json()
+    db.update_payment(recent["id"], status="checking")
+    user.get("/payments")
+    closed = db.payment(p["id"])
+    assert closed["status"] == "blocked"
+    assert fake.voids == ["auth-9"]
+    # A payment that may still be running is left alone
+    assert db.payment(recent["id"])["status"] == "checking"
+
+
 # The AI
 
 def verdict(monkeypatch, **fields):
