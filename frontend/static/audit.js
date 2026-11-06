@@ -19,7 +19,7 @@ function priceChange(p) {
   const change = Math.round((p.amount - p.quoted_price) * 100) / 100;
   return change === 0 ? null : change;
 }
-const readableReasons = p => (p.reasons || []).map(r => r.replace(/^AI( ok)?:\s*/, "")).join(" ");
+const readableReasons = p => (p.reasons || []).map(r => r.replace(/^AI( ok)?:\s*/, "")).reverse().join(" ");
 
 const auditColumns = [
   { field: "id", headerName: "#", width: 80, minWidth: 70, filter: "agNumberColumnFilter", sort: "desc" },
