@@ -54,6 +54,33 @@ You need Python 3.11 or newer, a PayPal developer account and a Gemini API key.
    ```
    It makes four purchases: one is paid, one waits for your approval, one is blocked because the price went up, and one is blocked because the shop page hides instructions for AI agents.
 
+## Shop through Leash from Claude (MCP)
+
+`mcp_server/server.py` gives an MCP client three tools: `pay`, `check_budget` and `check_payment`. There is no tool to approve a payment, change the rules or lift the freeze, so an agent cannot release its own leash.
+
+Start the backend first (step 4 above), then add the server. Use the full path to your copy of the repo.
+
+Claude Code:
+```
+claude mcp add leash -- /full/path/to/leash/.venv/Scripts/python /full/path/to/leash/mcp_server/server.py
+```
+
+Claude Desktop, in `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "leash": {
+      "command": "/full/path/to/leash/.venv/Scripts/python",
+      "args": ["/full/path/to/leash/mcp_server/server.py"]
+    }
+  }
+}
+```
+
+On Mac or Linux the Python path ends in `.venv/bin/python`. Set `LEASH_URL` if the backend is not on `http://localhost:8000`, and `LEASH_AGENT` to change the name shown on the dashboard.
+
+Then ask Claude to buy something and paste the shop page text. The payment appears on the dashboard. Leash only checks the page text the agent sends, so the `pay` tool tells the agent to send it unchanged.
+
 ## API
 
 - `POST /pay`: agent, merchant, item, category, amount, currency, quoted_price, task, page_text. Returns the payment with status `paid`, `waiting` or `blocked` and the reasons.
@@ -67,6 +94,7 @@ You need Python 3.11 or newer, a PayPal developer account and a Gemini API key.
 - `backend/` FastAPI app: checks, PayPal calls, Gemini calls, SQLite
 - `frontend/` dashboard page
 - `agents/` demo shopping agent
+- `mcp_server/` MCP server for Claude and other MCP clients
 - `docs/spikes/` the first Vault test script
 
 ## License

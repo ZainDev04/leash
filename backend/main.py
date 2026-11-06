@@ -8,7 +8,7 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, RedirectResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from . import ai, checks, db, paypal
 
@@ -22,9 +22,9 @@ class PayRequest(BaseModel):
     merchant: str
     item: str
     category: str
-    amount: float
+    amount: float = Field(gt=0, allow_inf_nan=False)
     currency: str = "USD"
-    quoted_price: float | None = None
+    quoted_price: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     task: str
     page_text: str = ""
 
