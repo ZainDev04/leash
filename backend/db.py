@@ -25,6 +25,9 @@ DEFAULT_POLICY = {
     "currency": "USD",
 }
 
+AUDIT_COLUMNS = ("id, created_at, agent, merchant, item, category, amount, quoted_price, currency, task, status, "
+                 "reasons, order_id, authorization_id, capture_id, product_url, page_verified")
+
 _pool = None
 
 
@@ -140,6 +143,13 @@ def payments(limit=100):
     return [to_dict(r) for r in rows]
 
 
+def audit_log(limit=5000):
+    """Every payment for the audit table, newest first. Page text is left out because it can be very long."""
+    with conn() as c:
+        rows = run(c, f"SELECT {AUDIT_COLUMNS} FROM payments ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+    return [to_dict(r) for r in rows]
+
+
 def stuck_payments(minutes=15):
     """Payments still being checked long after any check could have finished: the server stopped halfway."""
     with conn() as c:
@@ -163,7 +173,7 @@ def spent_this_month(before_id=None):
     with conn() as c:
         row = run(c, f"""SELECT COALESCE(SUM(amount), 0) AS s FROM payments
             WHERE status IN {COUNTED} AND created_at >= ? {earlier}""", params).fetchone()
-    return row["s"]
+    return round(row["s"], 2)
 
 
 def recent_duplicate(agent, merchant, item, amount, before_id, minutes=10):

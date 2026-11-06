@@ -28,7 +28,7 @@ if not security.login_enabled():
     log.warning(f"LEASH_ADMIN_PASSWORD is missing or under {security.MIN_PASSWORD_LENGTH} characters, so nobody can log in.")
 
 CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-       "font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; "
+       "font-src https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self'; "
        "frame-src https://www.youtube-nocookie.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'")
 PUBLIC_PATHS = ("/", "/robots.txt", "/sitemap.xml", "/site.webmanifest")
 
@@ -355,6 +355,18 @@ def clear_stuck_payments():
 def payments():
     clear_stuck_payments()
     return db.payments()
+
+
+@app.get("/audit", dependencies=[Depends(require_user)])
+def audit():
+    clear_stuck_payments()
+    return db.audit_log()
+
+
+@app.get("/audit", dependencies=[Depends(require_user)])
+def audit():
+    clear_stuck_payments()
+    return db.audit_log()
 
 
 @app.get("/payments/{pid}", dependencies=[Depends(require_user_or_agent)])

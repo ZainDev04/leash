@@ -16,7 +16,7 @@
 <header>
   <div class="wrap">
     <a class="logo" href="/app">leash<span>.</span></a>
-    <nav class="nav-links"><a href="#how">How it works</a><a href="#payments">Payments</a><a href="#rules">Rules</a></nav>
+    <nav class="nav-links"><a href="#how">How it works</a><a href="#payments">Payments</a><a href="#rules">Rules</a><a href="#audit">Audit log</a></nav>
     <div class="grow"></div>
     <button class="ghost" id="logout">Log out</button>
     <button class="ghost" id="theme"><span class="lbl">Theme: </span><span id="theme-name">light</span></button>
@@ -102,11 +102,33 @@
       <div class="vault"><span>PayPal account</span><b id="vault">...</b></div>
     </aside>
   </section>
+
+  <section class="audit" id="audit">
+    <div class="sec-title">
+      <div><div class="eyebrow">Every decision on record</div><h2>Audit log</h2></div>
+      <p>Each payment an agent tried, what Leash decided and why. Click a row to read the full reasons.</p>
+    </div>
+    <div class="audit-bar">
+      <div class="audit-chips" id="audit-chips" role="group" aria-label="Filter by result">
+        <button class="filter-chip" data-filter="all" aria-pressed="true">All <b id="c-all">0</b></button>
+        <button class="filter-chip" data-filter="paid" aria-pressed="false">Paid <b id="c-paid">0</b></button>
+        <button class="filter-chip" data-filter="waiting" aria-pressed="false">Waiting <b id="c-waiting">0</b></button>
+        <button class="filter-chip" data-filter="stopped" aria-pressed="false">Stopped <b id="c-stopped">0</b></button>
+      </div>
+      <input class="audit-search" id="audit-search" type="search" placeholder="Search all columns" aria-label="Search the audit log">
+      <button class="btn sm" id="audit-ids" aria-pressed="false">Show PayPal IDs</button>
+      <button class="btn sm" id="audit-csv">Export CSV</button>
+    </div>
+    <div id="audit-grid"></div>
+    <div class="audit-detail" id="audit-detail" hidden></div>
+  </section>
 </main>
 
 <div class="toasts" id="toasts"></div>
 
 <script src="/static/site.js"></script>
 <script src="/static/dashboard.js"></script>
+<script src="/static/vendor/ag-grid-community-36.3.0.min.js"></script>
+<script src="/static/audit.js"></script>
 </body>
 </html>

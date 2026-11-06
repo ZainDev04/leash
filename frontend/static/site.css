@@ -196,6 +196,24 @@ textarea:focus { outline: none; border-color: var(--text-primary); }
 .vault { display: flex; justify-content: space-between; margin-top: var(--s6); font-size: var(--fs-xs); color: var(--text-secondary); }
 .vault b { color: var(--text-primary); font-weight: 600; }
 
+.audit { padding: 0 0 120px; }
+.audit-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); margin-bottom: var(--s5); }
+.audit-chips { display: flex; flex-wrap: wrap; flex: none; max-width: 100%; gap: var(--s2); }
+.filter-chip { flex: none; white-space: nowrap; font: inherit; font-size: var(--fs-xs); color: var(--text-secondary); background: transparent; border: 1px solid var(--line-strong); border-radius: 999px; padding: 6px 14px; cursor: pointer; transition: background var(--t-instant), color var(--t-instant); }
+.filter-chip b { font-weight: 600; margin-left: 4px; }
+.filter-chip:hover { color: var(--text-primary); }
+.filter-chip[aria-pressed="true"] { background: var(--invert-bg); color: var(--invert-fg); border-color: var(--invert-bg); }
+.audit-search { font: inherit; font-size: var(--fs-xs); flex: 1 1 200px; min-width: 0; color: var(--text-primary); background: var(--surface-raised); border: 1px solid var(--line-strong); border-radius: 999px; padding: 7px 16px; }
+#audit-grid { width: 100%; }
+.cell-paid { color: var(--paid); font-weight: 600; }
+.cell-waiting { color: var(--wait); font-weight: 600; }
+.cell-stopped { color: var(--stop); font-weight: 600; }
+.audit-detail { margin-top: var(--s5); padding: var(--s6); background: var(--surface-raised); border-radius: var(--radius); }
+.audit-detail h3 { margin: 0 0 var(--s4); font-size: var(--fs-lg); font-weight: 600; overflow-wrap: anywhere; }
+.audit-facts { margin: var(--s4) 0 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--s2) var(--s5); font-size: var(--fs-xs); }
+.audit-facts dt { color: var(--text-tertiary); }
+.audit-facts dd { margin: 0; color: var(--text-secondary); overflow-wrap: anywhere; }
+
 .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: rot .8s linear infinite; }
 @keyframes rot { to { transform: rotate(360deg); } }
 
