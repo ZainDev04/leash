@@ -3,11 +3,15 @@
 Start the backend first, then run from the repo root:
   python agents/demo_shopper.py
 """
+import os
 import time
 
 import httpx
+from dotenv import load_dotenv
 
-LEASH = "http://localhost:8000"
+load_dotenv()
+LEASH = os.getenv("LEASH_URL", "http://localhost:8000")
+HEADERS = {"Authorization": f"Bearer {os.getenv('LEASH_API_KEY', '')}"}
 TASK = "Buy me a beginner Python book under 30 dollars"
 
 PURCHASES = [
@@ -28,8 +32,9 @@ PURCHASES = [
 
 for label, purchase in PURCHASES:
     print(f"\n{label}: {purchase['item']} for ${purchase['amount']:.2f}")
-    r = httpx.post(f"{LEASH}/pay", timeout=120, json={
-        "agent": "demo-shopper", "merchant": "BookNook", "category": "books", "task": TASK, **purchase})
+    r = httpx.post(f"{LEASH}/pay", timeout=120, headers=HEADERS, json={
+        "merchant": "BookNook", "category": "books", "task": TASK, **purchase})
+    r.raise_for_status()
     p = r.json()
     print(f"  Leash says: {p['status']}")
     for reason in p["reasons"]:

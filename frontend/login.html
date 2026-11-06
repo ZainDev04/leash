@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Log in | Leash</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+<script src="/static/theme-init.js"></script>
+</head>
+<body>
+<main class="center">
+  <form class="panel" id="login">
+    <a class="logo" href="/">leash<span>.</span></a>
+    <h1>Log in</h1>
+    <p>The dashboard is where you approve payments, change rules and use the kill switch.</p>
+    <label class="lb" for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" required autofocus>
+    <p class="error" id="error" role="alert"></p>
+    <button class="btn solid" type="submit">Open dashboard</button>
+  </form>
+</main>
+<script src="/static/site.js"></script>
+<script src="/static/login.js"></script>
+</body>
+</html>

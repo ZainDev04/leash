@@ -2,8 +2,8 @@
 from . import db
 
 
-def run(req, policy):
-    """Returns (decision, reasons). decision is 'block', 'ask' or 'ok'."""
+def run(req, policy, pid):
+    """Returns (decision, reasons). decision is 'block', 'ask' or 'ok'. pid is this payment's own row."""
     block, ask = [], []
     merchant = req["merchant"].lower()
     amount = req["amount"]
@@ -22,12 +22,12 @@ def run(req, policy):
         block.append(f"Category '{req['category']}' is not allowed.")
     if amount > policy["per_payment_limit"]:
         block.append(f"${amount:.2f} is over your ${policy['per_payment_limit']:.2f} per-payment limit.")
-    spent = db.spent_this_month()
+    spent = db.spent_this_month(before_id=pid)
     if spent + amount > policy["monthly_budget"]:
         block.append(f"This would take you to ${spent + amount:.2f}, over your ${policy['monthly_budget']:.2f} monthly budget.")
     if req.get("quoted_price") is not None and amount > req["quoted_price"]:
         block.append(f"Price went up from the quoted ${req['quoted_price']:.2f} to ${amount:.2f}.")
-    dup = db.recent_duplicate(req["agent"], req["merchant"], req["item"], amount)
+    dup = db.recent_duplicate(req["agent"], req["merchant"], req["item"], amount, pid)
     if dup:
         block.append(f"Looks like a repeat of payment #{dup} in the last 10 minutes.")
 

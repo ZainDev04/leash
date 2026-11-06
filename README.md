@@ -41,12 +41,16 @@ You need Python 3.11 or newer, a PayPal developer account and a Gemini API key.
    .venv/Scripts/pip install -r backend/requirements.txt   # Mac/Linux: .venv/bin/pip
    cp .env.example .env
    ```
-   Fill in `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` and `LLM_API_KEY` in `.env`.
+   Fill in `.env`:
+   - `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` and `LLM_API_KEY`
+   - `LEASH_ADMIN_PASSWORD`: your dashboard password, at least 12 characters
+   - `LEASH_AGENT_KEYS`: one key per agent, for example `claude:KEY1,demo-shopper:KEY2`. Make a key with `python -c "import secrets; print(secrets.token_urlsafe(32))"`
+   - `LEASH_API_KEY`: the demo agent's key (`KEY2` in that example)
 4. Start Leash:
    ```
    .venv/Scripts/uvicorn backend.main:app --port 8000
    ```
-5. Open http://localhost:8000 and click "Save my PayPal for agents". Log in with the sandbox Personal account and approve. A $1 hold is placed and released at once.
+5. Open http://localhost:8000/app and log in with your dashboard password. Click "Connect PayPal", log in with the sandbox Personal account and approve. A $1 hold is placed and released at once.
 6. Optional: type your own rules in plain English, click "Read my rules", check the summary and confirm.
 7. Run the demo agent in a second terminal and watch the dashboard:
    ```
@@ -56,13 +60,13 @@ You need Python 3.11 or newer, a PayPal developer account and a Gemini API key.
 
 ## Shop through Leash from Claude (MCP)
 
-`mcp_server/server.py` gives an MCP client three tools: `pay`, `check_budget` and `check_payment`. There is no tool to approve a payment, change the rules or lift the freeze, so an agent cannot release its own leash.
+`mcp_server/server.py` gives an MCP client three tools: `pay`, `check_budget` and `check_payment`. The agent's key only reaches those, so the agent cannot approve a payment, change the rules or lift the freeze.
 
-Start the backend first (step 4 above), then add the server. Use the full path to your copy of the repo.
+Start the backend first (step 4 above), then add the server. Use the full path to your copy of the repo and a key from `LEASH_AGENT_KEYS`.
 
 Claude Code:
 ```
-claude mcp add leash -- /full/path/to/leash/.venv/Scripts/python /full/path/to/leash/mcp_server/server.py
+claude mcp add leash -e LEASH_API_KEY=your-agent-key -- /full/path/to/leash/.venv/Scripts/python /full/path/to/leash/mcp_server/server.py
 ```
 
 Claude Desktop, in `claude_desktop_config.json`:
@@ -71,28 +75,57 @@ Claude Desktop, in `claude_desktop_config.json`:
   "mcpServers": {
     "leash": {
       "command": "/full/path/to/leash/.venv/Scripts/python",
-      "args": ["/full/path/to/leash/mcp_server/server.py"]
+      "args": ["/full/path/to/leash/mcp_server/server.py"],
+      "env": { "LEASH_API_KEY": "your-agent-key" }
     }
   }
 }
 ```
 
-On Mac or Linux the Python path ends in `.venv/bin/python`. Set `LEASH_URL` if the backend is not on `http://localhost:8000`, and `LEASH_AGENT` to change the name shown on the dashboard.
+On Mac or Linux the Python path ends in `.venv/bin/python`. Set `LEASH_URL` if the backend is not on `http://localhost:8000`. The name shown on the dashboard comes from the key.
 
 Then ask Claude to buy something and paste the shop page text. The payment appears on the dashboard. Leash only checks the page text the agent sends, so the `pay` tool tells the agent to send it unchanged.
 
 ## API
 
-- `POST /pay`: agent, merchant, item, category, amount, currency, quoted_price, task, page_text. Returns the payment with status `paid`, `waiting` or `blocked` and the reasons.
+Agents send `Authorization: Bearer <key>`:
+
+- `POST /pay`: merchant, item, category, amount, currency, quoted_price, task, page_text. Returns the payment with status `paid`, `waiting` or `blocked` and the reasons.
+- `GET /status`, `GET /payments/{id}`
+
+These need the dashboard login:
+
 - `GET /payments`, `POST /payments/{id}/approve`, `POST /payments/{id}/reject`
 - `POST /policy/parse` (plain English in, draft rules out), `PUT /policy`
 - `POST /freeze`, `POST /unfreeze`
-- `GET /vault/start` (save PayPal), `GET /status`
+- `GET /vault/start` (save PayPal)
+
+Open to anyone: `/` (home page), `/login`, `/health`, `/ready`, `/robots.txt`, `/sitemap.xml`.
+
+## Security and running it in production
+
+- Dashboard login uses a signed, HttpOnly cookie. Login attempts, payments and rule parsing are rate limited.
+- Changes from another website are refused, and every response carries security headers, including a Content-Security-Policy with no inline scripts.
+- Payments that arrive at the same moment cannot share the same unspent budget, and a double click on Approve can only capture once. If capture fails, the hold is voided.
+- Logs are one JSON line per request with a request ID. `/health` says the process is up and `/ready` says it can reach the database.
+- Set `PUBLIC_URL` to the `https://` address when hosted. That turns on secure cookies and HSTS, and sets the addresses used for PayPal links and search engines.
+
+Sessions and rate limits keep nothing in server memory, so the app is ready to run behind a load balancer. The database is SQLite, which only works on one server. Running several copies needs the move to Postgres.
+
+## Tests
+
+```
+.venv/Scripts/pip install -r backend/requirements-dev.txt
+.venv/Scripts/python -m pytest
+```
+
+The tests use a fake PayPal and a fake Gemini, so they need no keys and no network. GitHub Actions runs them on every push.
 
 ## Folders
 
 - `backend/` FastAPI app: checks, PayPal calls, Gemini calls, SQLite
-- `frontend/` dashboard page
+- `frontend/` public home page, login and dashboard
+- `tests/` automated tests
 - `agents/` demo shopping agent
 - `mcp_server/` MCP server for Claude and other MCP clients
 - `docs/spikes/` the first Vault test script

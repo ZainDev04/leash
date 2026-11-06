@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Dashboard | Leash</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/site.css">
+<script src="/static/theme-init.js"></script>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="/app">leash<span>.</span></a>
+    <nav class="nav-links"><a href="#how">How it works</a><a href="#payments">Payments</a><a href="#rules">Rules</a></nav>
+    <div class="grow"></div>
+    <button class="ghost" id="logout">Log out</button>
+    <button class="ghost" id="theme"><span class="lbl">Theme: </span><span id="theme-name">light</span></button>
+    <button class="kill" id="freeze" role="switch" aria-checked="false" aria-label="Freeze all agent payments"><span class="sw"></span><span class="lbl">Kill switch</span></button>
+  </div>
+  <div class="freeze-bar">All agent payments are frozen. Nothing is paid until you turn the kill switch off.</div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <div class="eyebrow reveal">Safe payments for AI agents</div>
+      <h1 class="reveal d1">Your agents pay.<br><em>You hold the leash.</em></h1>
+      <p class="lede reveal d2">Let AI agents shop with your PayPal. Every payment is held, checked against your rules, read by AI for tricks, and only then paid, sent to you, or stopped.</p>
+      <div class="ctas reveal d3">
+        <a class="btn solid" href="/vault/start" id="vault-btn"><span id="vault-text">Connect PayPal</span><span class="arr">&rarr;</span></a>
+        <a class="btn" href="#payments">See payments</a>
+      </div>
+    </div>
+    <div class="reveal d2">
+      <div class="card-stage" id="stage">
+        <div class="agent-card" id="card">
+          <div class="glow"></div>
+          <div class="sheen"></div>
+          <div class="ac-in">
+            <div class="ac-row"><div class="ac-brand">leash<span>.</span></div><div class="ac-tag">Agent card</div></div>
+            <div class="chip"></div>
+            <div class="ac-limit"><small>Spending limit per payment</small><b class="num" id="card-limit">$0.00</b></div>
+            <div class="ac-row" style="margin-top:14px">
+              <div class="ac-status" id="card-status"><i></i><span>Active</span></div>
+              <div class="ac-tag">PayPal vault</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-caption" id="caption">Watching your agents.</div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><div class="eyebrow">Spent this month</div><b class="num" id="spent">$0.00</b><div class="meter"><i id="meter"></i></div></div>
+    <div class="stat"><div class="eyebrow">Budget left</div><b class="num" id="left">$0.00</b></div>
+    <div class="stat"><div class="eyebrow"><i class="dot" style="background:var(--paid)"></i>Paid</div><b class="num" id="n-paid">0</b></div>
+    <div class="stat"><div class="eyebrow"><i class="dot" style="background:var(--wait)"></i>Waiting for you</div><b class="num" id="n-wait">0</b></div>
+    <div class="stat"><div class="eyebrow"><i class="dot" style="background:var(--stop)"></i>Stopped</div><b class="num" id="n-stop">0</b></div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="sec-title">
+      <div><div class="eyebrow">How it works</div><h2>Four checks before<br>a single cent moves.</h2></div>
+      <p>Hard limits live in code. The AI can only make a decision stricter, never approve what your rules refuse. If anything fails, nothing is paid.</p>
+    </div>
+    <div class="how-grid">
+      <div class="how-item"><div class="n">01</div><span class="tag stop">can stop</span><h3>Your rules</h3><p>Limit per payment, monthly budget, categories, allowed and blocked stores, price changes, repeat purchases.</p></div>
+      <div class="how-item"><div class="n">02</div><h3>Money on hold</h3><p>PayPal authorizes the amount from your saved account. Nothing is charged yet.</p></div>
+      <div class="how-item"><div class="n">03</div><span class="tag wait">only stricter</span><h3>AI reads the page</h3><p>Gemini looks for hidden instructions aimed at agents and checks the item matches your task.</p></div>
+      <div class="how-item"><div class="n">04</div><h3>Pay, ask or void</h3><p>The hold is captured, kept until you approve, or released. You see why, every time.</p></div>
+    </div>
+  </section>
+
+  <section class="work" id="payments">
+    <div>
+      <div class="sec-title" style="margin-bottom:var(--s6)"><div><div class="eyebrow">Live</div><h2>Agent payments</h2></div><div class="eyebrow" id="total"></div></div>
+      <div id="list" aria-live="polite"><div class="empty">No payments yet. Run the demo agent:<br><code>python agents/demo_shopper.py</code></div></div>
+    </div>
+    <aside class="side" id="rules">
+      <div class="eyebrow">Enforced in code</div>
+      <h3>Your rules</h3>
+      <ul class="rules" id="rule-list"></ul>
+      <label class="lb" for="rules-text">Change them in plain English</label>
+      <textarea id="rules-text" placeholder="Never more than $80 at once. Ask me above $40. Only books and groceries."></textarea>
+      <p class="hint">AI reads your words and shows what it understood. Nothing changes until you confirm.</p>
+      <button class="btn solid sm" id="parse">Read my rules</button>
+      <div class="draft" id="draft" hidden>
+        <div class="eyebrow">Leash understood</div>
+        <p id="draft-summary"></p>
+        <ul class="rules" id="draft-list" style="margin-bottom:var(--s5)"></ul>
+        <div class="acts" style="margin-top:0">
+          <button class="btn go sm" id="confirm">Use these rules</button>
+          <button class="btn sm" id="discard">Discard</button>
+        </div>
+      </div>
+      <div class="vault"><span>PayPal account</span><b id="vault">...</b></div>
+    </aside>
+  </section>
+</main>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="/static/site.js"></script>
+<script src="/static/dashboard.js"></script>
+</body>
+</html>

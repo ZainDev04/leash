@@ -5,8 +5,9 @@ change the rules or lift the freeze: those stay on the dashboard, with the user.
 
 Start the backend first. The client launches this file itself over stdio.
 Settings (environment variables):
-  LEASH_URL    address of the Leash backend, default http://localhost:8000
-  LEASH_AGENT  name shown on the dashboard for this agent's payments, default claude
+  LEASH_URL      address of the Leash backend, default http://localhost:8000
+  LEASH_API_KEY  this agent's key, one of those in the backend's LEASH_AGENT_KEYS.
+                 The name shown on the dashboard comes from the key.
 """
 import os
 
@@ -15,7 +16,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 LEASH = os.getenv("LEASH_URL", "http://localhost:8000").rstrip("/")
-AGENT = os.getenv("LEASH_AGENT", "claude")
+API_KEY = os.getenv("LEASH_API_KEY", "")
 
 NEXT_STEP = {
     "paid": "The money has been taken. Tell the user what was bought and for how much.",
@@ -39,13 +40,19 @@ mcp = MCPServer(
 def call(method, path, **kwargs):
     """Call the backend and turn failures into messages the agent can act on."""
     try:
-        r = httpx.request(method, f"{LEASH}{path}", timeout=150, **kwargs)
+        r = httpx.request(method, f"{LEASH}{path}", timeout=150,
+                          headers={"Authorization": f"Bearer {API_KEY}"}, **kwargs)
     except httpx.TimeoutException:
         raise ToolError("Leash did not answer in time. The payment may still be going through, so do "
                            "not pay again. Ask the user to look at the Leash dashboard.")
     except httpx.TransportError:
         raise ToolError(f"Could not reach Leash at {LEASH}, so nothing was paid. "
                            "Ask the user to start the Leash backend.")
+    if r.status_code == 401:
+        raise ToolError("Leash refused this agent's API key, so nothing was paid. "
+                        "Ask the user to check LEASH_API_KEY in the MCP config.")
+    if r.status_code == 429:
+        raise ToolError("Too many requests to Leash, so this one was not processed. Wait a minute before trying again.")
     if r.status_code == 404:
         raise ToolError("Leash has no payment with that id.")
     if r.status_code == 422:
@@ -88,7 +95,7 @@ def pay(merchant: str, item: str, category: str, amount: float, quoted_price: fl
     currency: three-letter code
     """
     return outcome(call("POST", "/pay", json={
-        "agent": AGENT, "merchant": merchant, "item": item, "category": category, "amount": amount,
+        "merchant": merchant, "item": item, "category": category, "amount": amount,
         "currency": currency, "quoted_price": quoted_price, "task": task, "page_text": page_text,
     }))
 

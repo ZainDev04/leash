@@ -48,7 +48,7 @@ def start_vault(return_url, cancel_url):
             "experience_context": {"return_url": return_url, "cancel_url": cancel_url, "user_action": "CONTINUE"},
         }},
     })
-    return next(l["href"] for l in order["links"] if l["rel"] == "payer-action")
+    return order["id"], next(l["href"] for l in order["links"] if l["rel"] == "payer-action")
 
 
 def finish_vault(order_id):
