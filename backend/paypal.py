@@ -111,6 +111,12 @@ def capture(auth_id):
         {**_once(), "authorization_id": auth_id, "body": CaptureRequest()}).body.id
 
 
+def capture_taken(auth_id):
+    """Did this hold end up charged? A timed-out capture looks the same as a refused connection, so ask PayPal."""
+    status = _client().payments.get_authorized_payment({"authorization_id": auth_id}).body.status
+    return status in ("CAPTURED", "PARTIALLY_CAPTURED")
+
+
 def void(auth_id):
     _client().payments.void_payment({**_once(), "authorization_id": auth_id})
 

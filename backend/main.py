@@ -326,12 +326,30 @@ def pay(body: PayRequest, agent: str = Depends(require_agent)):
     if final == "ask":
         return finish(pid, "waiting", reasons)
     try:
-        capture_id = paypal.capture(auth_id)
+        capture_id = take_payment(pid, auth_id)
     except Exception:
         log.exception(f"capture failed for payment {pid}")
-        return finish(pid, "blocked", reasons + ["PayPal could not take the payment, so nothing was paid."] + release(pid, auth_id))
+        return finish(pid, "blocked", reasons + ["PayPal did not confirm the payment, so Leash stopped it."] + release(pid, auth_id))
     db.update_payment(pid, capture_id=capture_id)
     return finish(pid, "paid", reasons or ["Passed all your rules and the AI check."])
+
+
+def take_payment(pid, auth_id):
+    """Capture the hold. A failed call does not prove nothing was charged: the reply may have been lost after
+    PayPal took the money. So PayPal is asked before anyone is told the payment failed. Returns the capture ID,
+    or None when PayPal shows it charged without giving one (the webhook fills it in)."""
+    try:
+        return paypal.capture(auth_id)
+    except Exception:
+        log.exception(f"capture call failed for payment {pid}, asking PayPal what happened")
+        try:
+            taken = paypal.capture_taken(auth_id)
+        except Exception:
+            log.exception(f"could not read the hold for payment {pid}")
+            taken = False
+        if taken:
+            return None
+        raise
 
 
 def release(pid, auth_id):
@@ -341,7 +359,7 @@ def release(pid, auth_id):
         return []
     except Exception:
         log.exception(f"void failed for payment {pid}")
-        return ["PayPal did not release the hold yet. It will expire by itself and no money was taken."]
+        return ["PayPal did not confirm the hold was released. If PayPal reports a charge, this payment will update by itself."]
 
 
 def finish(pid, status, reasons):
@@ -391,7 +409,7 @@ def payment(pid: int):
 def approve(pid: int):
     p = claim(pid)
     try:
-        capture_id = paypal.capture(p["authorization_id"])
+        capture_id = take_payment(pid, p["authorization_id"])
     except Exception:
         log.exception(f"capture failed for payment {pid}")
         db.update_payment(pid, status="waiting")
@@ -423,7 +441,7 @@ def refund(pid: int):
     except Exception:
         log.exception(f"refund failed for payment {pid}")
         db.update_payment(pid, status="paid")
-        raise HTTPException(502, "PayPal could not refund this payment. It is still paid, so you can try again.")
+        raise HTTPException(502, "PayPal did not confirm the refund. It still shows as paid here, and updates by itself if PayPal reports the refund.")
     db.update_payment(pid, refund_id=refund_id)
     return finish(pid, "refunded", p["reasons"] + ["You refunded it. The money went back and your budget was restored."])
 

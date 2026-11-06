@@ -215,3 +215,70 @@ def test_our_own_refund_and_its_webhook_do_not_double_up(user, fake, signed):
     row = db.payment(p["id"])
     assert row["status"] == "refunded"
     assert not any("PayPal reports" in r for r in row["reasons"])
+
+
+# PayPal can take the money and the reply can still be lost. Found by checking against the APIMatic context plugin.
+
+def test_lost_reply_after_paypal_took_the_money_is_paid(client, fake):
+    fake.fail.add("capture")
+    fake.taken = True
+    p = buy(client).json()
+    assert p["status"] == "paid"
+    assert fake.voids == []
+
+
+def test_capture_that_really_failed_is_stopped_and_released(client, fake):
+    fake.fail.add("capture")
+    p = buy(client).json()
+    assert p["status"] == "blocked"
+    assert len(fake.voids) == 1
+    assert not any("nothing was paid" in r for r in p["reasons"])
+
+
+def test_no_answer_at_all_is_stopped_without_claiming_nothing_was_taken(client, fake):
+    fake.fail |= {"capture", "capture_taken", "void"}
+    p = buy(client).json()
+    assert p["status"] == "blocked"
+    text = " ".join(p["reasons"])
+    assert "no money was taken" not in text and "nothing was paid" not in text
+    assert "update by itself" in text
+
+
+def test_late_webhook_corrects_a_payment_that_was_really_taken(user, fake, signed):
+    fake.fail |= {"capture", "capture_taken", "void"}
+    p = buy(user).json()
+    send(user, event("PAYMENT.CAPTURE.COMPLETED", {
+        "id": "capture-late", "supplementary_data": {"related_ids": {"authorization_id": p["authorization_id"]}}}))
+    row = db.payment(p["id"])
+    assert row["status"] == "paid" and row["capture_id"] == "capture-late"
+    assert user.get("/status").json()["spent_this_month"] == 25.0
+    fake.fail.clear()
+    assert user.post(f"/payments/{p['id']}/refund").json()["status"] == "refunded"
+
+
+def test_blocked_payment_with_no_capture_event_stays_blocked(client, signed):
+    p = buy(client, category="gift cards").json()
+    send(client, event("PAYMENT.AUTHORIZATION.VOIDED", {"id": "other"}))
+    assert db.payment(p["id"])["status"] == "blocked"
+
+
+def test_approve_with_a_lost_reply_is_paid_once(user, fake):
+    p = buy(user, amount=64.0, quoted_price=64.0).json()
+    fake.fail.add("capture")
+    fake.taken = True
+    assert user.post(f"/payments/{p['id']}/approve").json()["status"] == "paid"
+    assert user.post(f"/payments/{p['id']}/approve").status_code == 409
+
+
+def test_capture_taken_reads_the_hold_from_paypal(monkeypatch):
+    from types import SimpleNamespace as NS
+    seen = {}
+
+    def read(options):
+        seen.update(options)
+        return NS(body=NS(status="CAPTURED"))
+    monkeypatch.undo()
+    monkeypatch.setattr(paypal, "_client", lambda: NS(payments=NS(get_authorized_payment=read)))
+    assert paypal.capture_taken("AUTH1") is True
+    assert seen == {"authorization_id": "AUTH1"}
+

@@ -184,7 +184,7 @@ def test_capture_and_void_failure_still_finishes(client, fake):
     fake.fail.update({"capture", "void"})
     p = buy(client).json()
     assert p["status"] == "blocked"
-    assert any("will expire" in r for r in p["reasons"])
+    assert any("update by itself" in r for r in p["reasons"])
 
 
 def test_approve_failure_keeps_waiting_so_user_can_retry(user, fake):

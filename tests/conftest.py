@@ -38,6 +38,7 @@ class FakePayPal:
     def __init__(self):
         self.holds, self.captures, self.voids, self.refunds = [], [], [], []
         self.fail = set()
+        self.taken = False
 
     def _step(self, name):
         if name in self.fail:
@@ -52,6 +53,10 @@ class FakePayPal:
         self._step("capture")
         self.captures.append(auth_id)
         return f"capture-{auth_id}"
+
+    def capture_taken(self, auth_id):
+        self._step("capture_taken")
+        return self.taken
 
     def void(self, auth_id):
         self._step("void")
@@ -70,6 +75,7 @@ def fake(monkeypatch):
     monkeypatch.setattr(paypal, "capture", f.capture)
     monkeypatch.setattr(paypal, "void", f.void)
     monkeypatch.setattr(paypal, "refund", f.refund)
+    monkeypatch.setattr(paypal, "capture_taken", f.capture_taken)
     monkeypatch.setattr(ai, "check_payment", lambda req: {
         "verdict": "ok", "hidden_instructions": False, "item_matches_task": True, "reason": "Looks fine."})
     return f

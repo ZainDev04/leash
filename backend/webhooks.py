@@ -61,6 +61,12 @@ def _apply(event_type, resource, payment):
     if not payment:
         return
     pid = payment["id"]
+    if event_type == "PAYMENT.CAPTURE.COMPLETED":
+        if not payment["capture_id"] and resource.get("id"):
+            db.update_payment(pid, capture_id=resource["id"])
+        # Leash stopped this because PayPal's reply never came, but PayPal did take the money
+        if db.move_status(pid, "blocked", "paid"):
+            _add_reason(pid, "PayPal reports this payment was taken after all, so it is shown as paid and can be refunded.")
     if event_type in ("PAYMENT.CAPTURE.REFUNDED", "PAYMENT.CAPTURE.REVERSED"):
         if db.move_status(pid, "paid", "refunded"):
             db.update_payment(pid, refund_id=resource.get("id"))
