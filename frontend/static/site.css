@@ -198,6 +198,15 @@ textarea:focus { outline: none; border-color: var(--text-primary); }
 .vault b { color: var(--text-primary); font-weight: 600; }
 
 .audit { padding: 0 0 120px; }
+.week { padding: var(--s6); margin-bottom: var(--s5); background: var(--surface-raised); border-radius: var(--radius); }
+.week-head { display: flex; flex-wrap: wrap; gap: var(--s4); justify-content: space-between; align-items: center; }
+.week-head b { display: block; font-size: var(--fs-lg); font-weight: 600; }
+.week-head span { font-size: var(--fs-xs); color: var(--text-tertiary); }
+.week-note { margin: var(--s5) 0 0; font-size: var(--fs-sm); line-height: 26px; color: var(--text-secondary); }
+.week-watch { margin: var(--s3) 0 0; font-size: var(--fs-xs); font-weight: 600; color: var(--wait); }
+.week-agents { list-style: none; margin: var(--s5) 0 0; padding: 0; font-size: var(--fs-xs); }
+.week-agents li { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); justify-content: space-between; padding: var(--s3) 0; border-top: 1px solid var(--line); color: var(--text-secondary); }
+.week-agents b { color: var(--text-primary); font-weight: 600; overflow-wrap: anywhere; }
 .audit-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); margin-bottom: var(--s5); }
 .audit-chips { display: flex; flex-wrap: wrap; flex: none; max-width: 100%; gap: var(--s2); }
 .filter-chip { flex: none; white-space: nowrap; font: inherit; font-size: var(--fs-xs); color: var(--text-secondary); background: transparent; border: 1px solid var(--line-strong); border-radius: 999px; padding: 6px 14px; cursor: pointer; transition: background var(--t-instant), color var(--t-instant); }

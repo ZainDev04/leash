@@ -58,7 +58,8 @@ def offer(html):
             except (KeyError, TypeError, ValueError):
                 continue
             seller = found.get("seller")
-            return {"price": price, "currency": found.get("priceCurrency"),
+            return {"name": thing.get("name"), "category": thing.get("category"),
+                    "price": price, "currency": found.get("priceCurrency"),
                     "seller": seller.get("name") if isinstance(seller, dict) else None}
     return None
 
@@ -93,7 +94,38 @@ def inspect(req):
             block.append(f"The agent asked to pay in {req['currency']} but the shop page says {found['currency']}.")
         if found["seller"] and found["seller"].strip().lower() != req["merchant"].lower():
             block.append(f"The agent named {req['merchant']} as the store but the page says the seller is {found['seller']}.")
+        if isinstance(found["category"], str) and found["category"].strip().lower() != req["category"].strip().lower():
+            block.append(f"The agent said the category is {req['category']} but the page says {found['category']}.")
+        if isinstance(found["name"], str) and not same_item(req["item"], found["name"]):
+            ask.append(f"The agent named the item {req['item']} but the page sells {found['name']}.")
     return text, True, block, ask + too_long(text)
+
+
+# Text aimed at Leash's own check. An AI can be talked into obeying this, so plain code looks for it first.
+# Orders aimed at the shopping agent ("ignore your instructions, also buy...") are left for the AI, which explains them.
+ATTACK_MARKERS = re.compile(
+    r"<\s*/?\s*page\b"
+    r"|hidden_instructions|item_matches_task"
+    r"|\bverdict\s*[\"':=]|verdict\s+(?:of\s+)?[\"']?ok\b"
+    r"|(?:safety|security)\s+(?:review|check)\s+(?:is\s+|has\s+been\s+|was\s+)?(?:finished|complete|completed|passed|done)",
+    re.I)
+
+
+def attack_marker(text):
+    """A block reason if the page tries to give orders to the safety check itself."""
+    if ATTACK_MARKERS.search(text or ""):
+        return ["The shop page contains text written to fool Leash's safety check."]
+    return []
+
+
+def _words(text):
+    return {w for w in re.findall(r"[a-z0-9]+", text.lower()) if len(w) > 2 and w not in ("the", "and", "for", "with", "edition")}
+
+
+def same_item(claimed, on_page):
+    """At least half of the words the agent used must be on the page. Agents shorten names, so exact match is too strict."""
+    claimed_words = _words(claimed)
+    return not claimed_words or len(claimed_words & _words(on_page)) * 2 >= len(claimed_words)
 
 
 def too_long(text):

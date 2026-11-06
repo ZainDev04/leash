@@ -144,5 +144,19 @@ $("audit-csv").onclick = () => auditApi.exportDataAsCsv({
   fileName: "leash-audit-log.csv", allColumns: true, skipPinnedBottom: true, processCellCallback: safeForSpreadsheet,
 });
 
+$("week-btn").onclick = async e => {
+  const btn = e.currentTarget, out = $("week-out");
+  btn.disabled = true; btn.innerHTML = `<span class="spin"></span>Writing`;
+  try {
+    const r = await api("/summary", { method: "POST" });
+    out.innerHTML = `<p class="week-note">${esc(r.summary)}</p>
+      ${r.watch ? `<p class="week-watch">${esc(r.watch)}</p>` : ""}
+      <ul class="week-agents">${r.agents.map(a => `<li><b>${esc(a.agent)}</b>
+        <span>${money(a.paid_total)} paid in ${a.paid}, ${a.waiting} waiting, ${a.stopped} stopped, ${a.refunded} refunded</span></li>`).join("")}</ul>`;
+    out.hidden = false;
+  } catch (err) { toast("blocked", "Could not make the summary: " + err.message); }
+  btn.disabled = false; btn.textContent = "Summarize my agents";
+};
+
 loadAudit().catch(() => {});
 setInterval(() => { if (!document.hidden) loadAudit().catch(() => {}); }, AUDIT_POLL_MS);

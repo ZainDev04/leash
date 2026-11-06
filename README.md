@@ -65,6 +65,18 @@ You need Python 3.11 or newer, a PayPal developer account and a Gemini API key.
 
    `agents/demo_shopper.py` is a scripted version that needs almost no quota. It makes four purchases: one is paid, one waits for your approval, one is blocked because the price went up, and one is blocked because the shop page hides instructions for AI agents.
 
+## Weekly spending summary
+
+The dashboard can sum up the last 7 days per agent: what each one spent, how often it was stopped or refunded, and what to look at. Code works out every number. Gemini only writes the words around them, gets item names as untrusted data, and the page shows the numbers from code next to its text.
+
+## Red team
+
+`agents/red_team.py` attacks Leash the way a tricked or badly behaved agent would, with real Gemini and the real PayPal sandbox: hidden instructions, fake approvals, fake discounts, store and item swaps, split purchases, stolen keys and agents trying to approve their own payments. Two normal purchases run alongside, so a Leash that blocked everything would fail.
+
+The first run stopped 22 of 23 attacks. A page that wrote its own "the safety review is finished" message fooled Gemini and got paid. Plain code now looks for that kind of text before the AI sees the page, and the AI's page tag is random for each check. The latest run stopped 24 of 24 attacks and both normal purchases were paid. Gemini's answers can vary between runs, so run it yourself. Full results are in [docs/red-team-results.md](docs/red-team-results.md).
+
+The AI is one layer of several, and this run shows why: prices, stores, limits and keys are checked by code that cannot be talked out of anything.
+
 ## Refunds and PayPal webhooks
 
 If an agent buys the wrong thing, press "Refund" on the payment. PayPal returns the money and the budget goes back up. Agents cannot refund, approve or change rules.

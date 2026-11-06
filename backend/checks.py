@@ -33,6 +33,11 @@ def run(req, policy, pid, page_block=(), page_ask=()):
 
     if amount > policy["ask_above"]:
         ask.append(f"${amount:.2f} is above your ${policy['ask_above']:.2f} 'ask me first' amount.")
+    else:
+        # Several small purchases must not get around the amount one large purchase would be asked about
+        recent = db.spent_recently(pid)
+        if recent and recent + amount > policy["ask_above"]:
+            ask.append(f"With the ${recent:.2f} spent in the last 10 minutes, this takes you past your ${policy['ask_above']:.2f} 'ask me first' amount.")
 
     if block:
         return "block", block

@@ -181,6 +181,13 @@ def payment_by_paypal_ids(ids):
     return to_dict(row) if row else None
 
 
+def payments_since(days):
+    """Every payment in the last few days, without page text."""
+    with conn() as c:
+        rows = run(c, f"SELECT {AUDIT_COLUMNS} FROM payments WHERE created_at >= ? ORDER BY id", (_now(days * 24 * 60),)).fetchall()
+    return [to_dict(r) for r in rows]
+
+
 def stuck_payments(minutes=15):
     """Payments still being checked long after any check could have finished: the server stopped halfway."""
     with conn() as c:
@@ -204,6 +211,14 @@ def spent_this_month(before_id=None):
     with conn() as c:
         row = run(c, f"""SELECT COALESCE(SUM(amount), 0) AS s FROM payments
             WHERE status IN {COUNTED} AND created_at >= ? {earlier}""", params).fetchone()
+    return round(row["s"], 2)
+
+
+def spent_recently(before_id, minutes=10):
+    """Total of the payments before this one in the last few minutes, across every agent."""
+    with conn() as c:
+        row = run(c, f"""SELECT COALESCE(SUM(amount), 0) AS s FROM payments
+            WHERE id < ? AND status IN {COUNTED} AND created_at >= ?""", (before_id, _now(minutes))).fetchone()
     return round(row["s"], 2)
 
 

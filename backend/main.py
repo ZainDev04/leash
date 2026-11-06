@@ -288,6 +288,7 @@ def pay(body: PayRequest, agent: str = Depends(require_agent)):
     # Read the page before anything else, so every later step uses what the shop really shows
     req["page_text"], read_by_leash, page_block, page_ask = pages.inspect(req)
     db.update_payment(pid, page_text=req["page_text"], page_verified=int(read_by_leash))
+    page_block = [*page_block, *pages.attack_marker(req["page_text"])]
     decision, reasons = checks.run(req, db.get("policy"), pid, page_block, page_ask)
 
     if decision == "block":
@@ -421,6 +422,41 @@ def refund(pid: int):
         raise HTTPException(502, "PayPal could not refund this payment. It is still paid, so you can try again.")
     db.update_payment(pid, refund_id=refund_id)
     return finish(pid, "refunded", p["reasons"] + ["You refunded it. The money went back and your budget was restored."])
+
+
+# Weekly summary. Code does the sums, the AI only writes about them.
+
+def spending_figures(rows):
+    agents = {}
+    for p in rows:
+        a = agents.setdefault(p["agent"] or "unknown", {
+            "agent": p["agent"] or "unknown", "paid_total": 0.0, "paid": 0, "waiting": 0, "stopped": 0, "refunded": 0, "items_bought": [], "stopped_because": []})
+        if p["status"] == "paid":
+            a["paid"] += 1
+            a["paid_total"] = round(a["paid_total"] + p["amount"], 2)
+            a["items_bought"].append(p["item"][:80])
+        elif p["status"] == "waiting":
+            a["waiting"] += 1
+        elif p["status"] == "refunded":
+            a["refunded"] += 1
+        elif p["status"] in ("blocked", "cancelled"):
+            a["stopped"] += 1
+            a["stopped_because"].extend(r[:160] for r in p["reasons"][:1])
+    return sorted(agents.values(), key=lambda a: -a["paid_total"])
+
+
+@app.post("/summary", dependencies=[Depends(require_user)])
+def summary():
+    security.limit("summary", 6)
+    figures = spending_figures(db.payments_since(7))
+    if not figures:
+        return {"agents": [], "summary": "No agent tried to pay in the last 7 days.", "watch": ""}
+    try:
+        words = ai.summarize_spending(figures)
+    except Exception:
+        log.exception("spending summary failed")
+        return {"agents": figures, "summary": "The AI could not write a note just now. The figures below come from your payments.", "watch": ""}
+    return {"agents": figures, "summary": words["summary"], "watch": words["watch"]}
 
 
 # PayPal tells Leash what happened to a payment. Open to the internet, so nothing is believed until PayPal

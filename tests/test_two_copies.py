@@ -64,8 +64,10 @@ def test_budget_holds_across_copies(copies):
     with ThreadPoolExecutor(10) as pool:
         results = list(pool.map(lambda job: pay_through(*job)["status"], jobs))
     # Budget is 100, so at most two 39.00 payments fit, whichever copy took them
-    assert results.count("paid") == 2
+    assert results.count("paid") + results.count("waiting") == 2
     assert results.count("blocked") == 8
+    # The second is past the ask-me-first amount once the first is added
+    assert results.count("waiting") == 1
 
 
 def test_repeat_is_caught_across_copies(copies):
