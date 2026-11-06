@@ -36,3 +36,9 @@ def test_spent_total_is_rounded_to_cents(user):
     buy(user, item="First", amount=24.99, quoted_price=24.99)
     buy(user, item="Second", amount=38.0, quoted_price=38.0)
     assert user.get("/status").json()["spent_this_month"] == 62.99
+
+
+def test_own_files_are_rechecked_and_versioned_files_are_kept(client):
+    assert client.get("/static/audit.js").headers["Cache-Control"] == "no-cache"
+    assert "immutable" in client.get("/static/vendor/ag-grid-community-36.3.0.min.js").headers["Cache-Control"]
+

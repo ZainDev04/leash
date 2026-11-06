@@ -57,9 +57,11 @@ async def around_every_request(request: Request, call_next):
     headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     if base_url().startswith("https://"):
         headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    if path.startswith("/static/"):
-        headers["Cache-Control"] = "public, max-age=3600"
-    elif path in PUBLIC_PATHS:
+    if path.startswith("/static/vendor/"):
+        # The version is in the file name, so this content never changes
+        headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif path.startswith("/static/") or path in PUBLIC_PATHS:
+        # Browsers keep a copy but ask first, so a deploy reaches everyone on their next page load
         headers["Cache-Control"] = "no-cache"
     else:
         headers["Cache-Control"] = "no-store"
