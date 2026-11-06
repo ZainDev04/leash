@@ -65,6 +65,12 @@ You need Python 3.11 or newer, a PayPal developer account and a Gemini API key.
 
    `agents/demo_shopper.py` is a scripted version that needs almost no quota. It makes four purchases: one is paid, one waits for your approval, one is blocked because the price went up, and one is blocked because the shop page hides instructions for AI agents.
 
+## Telegram approvals
+
+Payments that need you arrive on your phone with Approve and Reject buttons, and you get a note when Leash stops one. Send `/freeze` to stop all agent payments and `/status` to see your spending. The freeze can be lifted only from the dashboard.
+
+To turn it on, make a bot with @BotFather, set `TELEGRAM_BOT_TOKEN`, then press Connect Telegram on the dashboard. That makes a one-time link that lasts 10 minutes. Only the linked chat can press buttons or send commands, Telegram proves each update with a secret, and the buttons run the same code as the dashboard, so a double tap pays once. A Telegram outage never changes what happens to a payment.
+
 ## Weekly spending summary
 
 The dashboard can sum up the last 7 days per agent: what each one spent, how often it was stopped or refunded, and what to look at. Code works out every number. Gemini only writes the words around them, gets item names as untrusted data, and the page shows the numbers from code next to its text.

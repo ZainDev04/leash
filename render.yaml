@@ -27,6 +27,8 @@ services:
         sync: false
       - key: LLM_API_KEY
         sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
       - key: LEASH_ADMIN_PASSWORD
         sync: false
       - key: LEASH_AGENT_KEYS

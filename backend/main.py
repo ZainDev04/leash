@@ -16,13 +16,15 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import ai, checks, db, pages, paypal, security, store, webhooks
+from . import ai, checks, db, pages, paypal, security, store, telegram, webhooks
 from .security import require_agent, require_user, require_user_or_agent
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger("leash")
 
 app = FastAPI(title="Leash", docs_url=None, redoc_url=None, openapi_url=None)
+# httpx logs every address at INFO, and Telegram's addresses contain the bot token
+logging.getLogger("httpx").setLevel(logging.WARNING)
 db.init()
 FRONTEND = Path(__file__).parent.parent / "frontend"
 if not security.login_enabled():
@@ -344,7 +346,9 @@ def release(pid, auth_id):
 
 def finish(pid, status, reasons):
     db.update_payment(pid, status=status, reasons=json.dumps(reasons))
-    return db.payment(pid)
+    p = db.payment(pid)
+    telegram.notify(p)
+    return p
 
 
 def clear_stuck_payments():
@@ -457,6 +461,64 @@ def summary():
         log.exception("spending summary failed")
         return {"agents": figures, "summary": "The AI could not write a note just now. The figures below come from your payments.", "watch": ""}
     return {"agents": figures, "summary": words["summary"], "watch": words["watch"]}
+
+
+# Telegram approvals
+
+@app.get("/telegram", dependencies=[Depends(require_user)])
+def telegram_status():
+    return {"available": bool(telegram.token()), "linked": bool(telegram.token() and telegram.linked_chat())}
+
+
+@app.post("/telegram/link", dependencies=[Depends(require_user)])
+def telegram_link():
+    if not telegram.token():
+        raise HTTPException(503, "Set TELEGRAM_BOT_TOKEN on the server first.")
+    try:
+        return {"url": telegram.start_link(f"{base_url()}/telegram/webhook")}
+    except RuntimeError as e:
+        log.warning(str(e))
+        raise HTTPException(502, "Telegram did not accept the setup. Check the bot token.")
+
+
+@app.post("/telegram/unlink", dependencies=[Depends(require_user)])
+def telegram_unlink():
+    telegram.unlink()
+    return {"ok": True}
+
+
+def _decide_from_telegram(decide, pid):
+    """Runs the same code as the dashboard buttons, so a double tap or a late tap cannot act twice."""
+    try:
+        p = decide(pid)
+    except HTTPException as e:
+        return str(e.detail)
+    word = {"paid": "Paid", "cancelled": "Rejected"}.get(p["status"], p["status"])
+    return f"{word}. {p['reasons'][-1]}"
+
+
+def _freeze_from_telegram():
+    db.put("frozen", True)
+
+
+@app.post("/telegram/webhook")
+async def telegram_webhook(request: Request):
+    if not telegram.token():
+        raise HTTPException(404, "Not Found")
+    if not telegram.secret_matches(request.headers.get("X-Telegram-Bot-Api-Secret-Token")):
+        raise HTTPException(401, "Not from Telegram.")
+    security.limit("telegram", 120)
+    try:
+        update = json.loads(await request.body())
+    except ValueError:
+        return {"ok": True}
+    if isinstance(update, dict):
+        await run_in_threadpool(
+            telegram.handle_update, update,
+            lambda pid: _decide_from_telegram(approve, pid),
+            lambda pid: _decide_from_telegram(reject, pid),
+            _freeze_from_telegram)
+    return {"ok": True}
 
 
 # PayPal tells Leash what happened to a payment. Open to the internet, so nothing is believed until PayPal

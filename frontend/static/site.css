@@ -224,6 +224,8 @@ textarea:focus { outline: none; border-color: var(--text-primary); }
 .audit-facts dt { color: var(--text-tertiary); }
 .audit-facts dd { margin: 0; color: var(--text-secondary); overflow-wrap: anywhere; }
 
+.tg { margin-top: var(--s4); }
+.tg .btn { margin-top: var(--s3); }
 .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: rot .8s linear infinite; }
 @keyframes rot { to { transform: rotate(360deg); } }
 

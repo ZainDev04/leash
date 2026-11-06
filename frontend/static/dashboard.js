@@ -164,6 +164,29 @@ $("confirm").onclick = async () => {
 };
 $("discard").onclick = () => { $("draft").hidden = true; draft = null; };
 
+let tgLinked = false;
+async function loadTelegram() {
+  const t = await api("/telegram");
+  $("tg").hidden = !t.available;
+  tgLinked = t.linked;
+  $("tg-state").textContent = t.linked ? "Connected" : "Not connected";
+  $("tg-link").textContent = t.linked ? "Disconnect Telegram" : "Connect Telegram";
+  if (t.linked) { $("tg-open").hidden = true; $("tg-hint").hidden = true; }
+}
+$("tg-link").onclick = async () => {
+  try {
+    if (tgLinked) {
+      await api("/telegram/unlink", { method: "POST" });
+    } else {
+      $("tg-open").href = (await api("/telegram/link", { method: "POST" })).url;
+      $("tg-open").hidden = false; $("tg-hint").hidden = false;
+    }
+    loadTelegram();
+  } catch (e) { toast("blocked", e.message); }
+};
+loadTelegram().catch(() => {});
+setInterval(() => { if (!document.hidden) loadTelegram().catch(() => {}); }, 5000);
+
 function refresh() { loadStatus().catch(() => {}); loadPayments().catch(() => {}); }
 if (new URLSearchParams(location.search).get("vault") === "failed") {
   toast("blocked", "PayPal could not be saved. Try connecting again.");

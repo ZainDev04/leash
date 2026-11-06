@@ -14,6 +14,7 @@ os.environ["PAYPAL_CLIENT_SECRET"] = "unused"
 os.environ["LLM_API_KEY"] = "unused"
 os.environ["LEASH_VERIFIED_STORES"] = ""
 os.environ["PAYPAL_WEBHOOK_ID"] = ""
+os.environ["TELEGRAM_BOT_TOKEN"] = ""
 # Set this to run every test on Postgres. CI does. The database is emptied, so never point it at real data.
 if os.getenv("LEASH_TEST_DATABASE_URL"):
     os.environ["DATABASE_URL"] = os.environ["LEASH_TEST_DATABASE_URL"]
