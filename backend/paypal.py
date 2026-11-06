@@ -1,8 +1,10 @@
 """PayPal calls, through the official PayPal Server SDK. Leash is fixed to the sandbox, so no real money can move."""
+import json
 import os
 import uuid
 from functools import lru_cache
 
+import httpx
 from paypalserversdk.configuration import Environment
 from paypalserversdk.http.auth.o_auth_2 import ClientCredentialsAuthCredentials
 from paypalserversdk.models.amount_with_breakdown import AmountWithBreakdown
@@ -20,6 +22,9 @@ from paypalserversdk.models.paypal_wallet_vault_instruction import PaypalWalletV
 from paypalserversdk.models.purchase_unit_request import PurchaseUnitRequest
 from paypalserversdk.models.store_in_vault_instruction import StoreInVaultInstruction
 from paypalserversdk.paypal_serversdk_client import PaypalServersdkClient
+
+
+API = "https://api-m.sandbox.paypal.com"
 
 
 class PayPalError(Exception):
@@ -108,3 +113,33 @@ def capture(auth_id):
 
 def void(auth_id):
     _client().payments.void_payment({**_once(), "authorization_id": auth_id})
+
+
+def refund(capture_id):
+    """Refund the whole payment. Returns the refund ID."""
+    return _client().payments.refund_captured_payment({**_once(), "capture_id": capture_id}).body.id
+
+
+def webhook_id():
+    return os.getenv("PAYPAL_WEBHOOK_ID", "")
+
+
+def verify_webhook(headers, raw_event):
+    """Ask PayPal whether it really sent this event. The SDK has no call for this, so it uses REST.
+
+    PayPal signs the bytes it sent, so the event goes back exactly as received, never parsed and rebuilt.
+    """
+    token = httpx.post(f"{API}/v1/oauth2/token", data={"grant_type": "client_credentials"}, timeout=15,
+                       auth=(os.environ["PAYPAL_CLIENT_ID"], os.environ["PAYPAL_CLIENT_SECRET"])).raise_for_status().json()["access_token"]
+    fields = {
+        "auth_algo": headers.get("paypal-auth-algo"),
+        "cert_url": headers.get("paypal-cert-url"),
+        "transmission_id": headers.get("paypal-transmission-id"),
+        "transmission_sig": headers.get("paypal-transmission-sig"),
+        "transmission_time": headers.get("paypal-transmission-time"),
+        "webhook_id": webhook_id(),
+    }
+    body = json.dumps(fields)[:-1] + ', "webhook_event": ' + raw_event + "}"
+    reply = httpx.post(f"{API}/v1/notifications/verify-webhook-signature", content=body, timeout=15,
+                       headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+    return reply.raise_for_status().json().get("verification_status") == "SUCCESS"

@@ -26,7 +26,7 @@ DEFAULT_POLICY = {
 }
 
 AUDIT_COLUMNS = ("id, created_at, agent, merchant, item, category, amount, quoted_price, currency, task, status, "
-                 "reasons, order_id, authorization_id, capture_id, product_url, page_verified")
+                 "reasons, order_id, authorization_id, capture_id, refund_id, product_url, page_verified")
 
 _pool = None
 
@@ -86,9 +86,14 @@ def init():
             task TEXT, page_text TEXT,
             status TEXT, reasons TEXT,
             order_id TEXT, authorization_id TEXT, capture_id TEXT,
-            product_url TEXT, page_verified INTEGER DEFAULT 0
+            product_url TEXT, page_verified INTEGER DEFAULT 0, refund_id TEXT
+        )""")
+        run(c, """CREATE TABLE IF NOT EXISTS paypal_events (
+            event_id TEXT PRIMARY KEY, event_type TEXT, resource_id TEXT, payment_id BIGINT, received_at TEXT
         )""")
         run(c, "CREATE TABLE IF NOT EXISTS rate_hits (key TEXT, slot BIGINT, hits INTEGER, PRIMARY KEY (key, slot))")
+        if DATABASE_URL:
+            run(c, "ALTER TABLE payments ADD COLUMN IF NOT EXISTS refund_id TEXT")
         if not DATABASE_URL:
             # Databases made by earlier versions of Leash
             run(c, "DROP TABLE IF EXISTS rate_limits")
@@ -96,6 +101,8 @@ def init():
             if "product_url" not in columns:
                 run(c, "ALTER TABLE payments ADD COLUMN product_url TEXT")
                 run(c, "ALTER TABLE payments ADD COLUMN page_verified INTEGER DEFAULT 0")
+            if "refund_id" not in columns:
+                run(c, "ALTER TABLE payments ADD COLUMN refund_id TEXT")
     if get("policy") is None:
         put("policy", DEFAULT_POLICY)
     if get("frozen") is None:
@@ -148,6 +155,30 @@ def audit_log(limit=5000):
     with conn() as c:
         rows = run(c, f"SELECT {AUDIT_COLUMNS} FROM payments ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
     return [to_dict(r) for r in rows]
+
+
+def paypal_events():
+    with conn() as c:
+        return [dict(r) for r in run(c, "SELECT * FROM paypal_events ORDER BY received_at, event_id").fetchall()]
+
+
+def add_paypal_event(event_id, event_type, resource_id, payment_id):
+    """Returns True the first time this event ID is seen."""
+    with conn() as c:
+        return run(c, """INSERT INTO paypal_events (event_id, event_type, resource_id, payment_id, received_at)
+            VALUES (?, ?, ?, ?, ?) ON CONFLICT (event_id) DO NOTHING RETURNING event_id""",
+                   (event_id, event_type, resource_id, payment_id, _now())).fetchone() is not None
+
+
+def payment_by_paypal_ids(ids):
+    """ids maps a column (order_id, authorization_id or capture_id) to the value PayPal sent."""
+    allowed = {k: v for k, v in ids.items() if k in ("order_id", "authorization_id", "capture_id")}
+    if not allowed:
+        return None
+    where = " OR ".join(f"{column} = ?" for column in allowed)
+    with conn() as c:
+        row = run(c, f"SELECT * FROM payments WHERE {where} ORDER BY id DESC LIMIT 1", list(allowed.values())).fetchone()
+    return to_dict(row) if row else None
 
 
 def stuck_payments(minutes=15):

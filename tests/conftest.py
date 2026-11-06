@@ -13,6 +13,7 @@ os.environ["PAYPAL_CLIENT_ID"] = "unused"
 os.environ["PAYPAL_CLIENT_SECRET"] = "unused"
 os.environ["LLM_API_KEY"] = "unused"
 os.environ["LEASH_VERIFIED_STORES"] = ""
+os.environ["PAYPAL_WEBHOOK_ID"] = ""
 # Set this to run every test on Postgres. CI does. The database is emptied, so never point it at real data.
 if os.getenv("LEASH_TEST_DATABASE_URL"):
     os.environ["DATABASE_URL"] = os.environ["LEASH_TEST_DATABASE_URL"]
@@ -34,7 +35,7 @@ POLICY = {
 
 class FakePayPal:
     def __init__(self):
-        self.holds, self.captures, self.voids = [], [], []
+        self.holds, self.captures, self.voids, self.refunds = [], [], [], []
         self.fail = set()
 
     def _step(self, name):
@@ -55,6 +56,11 @@ class FakePayPal:
         self._step("void")
         self.voids.append(auth_id)
 
+    def refund(self, capture_id):
+        self._step("refund")
+        self.refunds.append(capture_id)
+        return f"refund-{capture_id}"
+
 
 @pytest.fixture
 def fake(monkeypatch):
@@ -62,6 +68,7 @@ def fake(monkeypatch):
     monkeypatch.setattr(paypal, "hold", f.hold)
     monkeypatch.setattr(paypal, "capture", f.capture)
     monkeypatch.setattr(paypal, "void", f.void)
+    monkeypatch.setattr(paypal, "refund", f.refund)
     monkeypatch.setattr(ai, "check_payment", lambda req: {
         "verdict": "ok", "hidden_instructions": False, "item_matches_task": True, "reason": "Looks fine."})
     return f
@@ -70,7 +77,7 @@ def fake(monkeypatch):
 @pytest.fixture(autouse=True)
 def clean_db(fake):
     with db.conn() as c:
-        for table in ("payments", "settings", "rate_hits"):
+        for table in ("payments", "settings", "rate_hits", "paypal_events"):
             db.run(c, f"DELETE FROM {table}")
     db.init()
     db.put("policy", POLICY)

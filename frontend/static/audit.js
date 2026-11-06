@@ -2,7 +2,7 @@
 // so an item name written by an agent or a shop cannot run as code on this page.
 const AUDIT_POLL_MS = 5000;
 const stopped = ["blocked", "cancelled"];
-const inGroup = { all: () => true, paid: s => s === "paid", waiting: s => s === "waiting", stopped: s => stopped.includes(s) };
+const inGroup = { all: () => true, paid: s => s === "paid", waiting: s => s === "waiting", stopped: s => stopped.includes(s), refunded: s => s === "refunded" };
 let auditGroup = "all", idsShown = false;
 
 const toDate = text => text ? new Date(text.replace(" ", "T") + "Z") : null;
@@ -33,7 +33,7 @@ const auditColumns = [
     valueGetter: p => p.data.status ? (statusWord[p.data.status] || p.data.status) : "",
     cellClassRules: {
       "cell-paid": p => p.data.status === "paid",
-      "cell-waiting": p => p.data.status === "waiting",
+      "cell-waiting": p => p.data.status === "waiting" || p.data.status === "refunded",
       "cell-stopped": p => stopped.includes(p.data.status),
     } },
   { colId: "decided", headerName: "Decided by", width: 125, valueGetter: p => decidedBy(p.data) },
@@ -47,8 +47,11 @@ const auditColumns = [
     cellClassRules: { "cell-stopped": p => p.value > 0 } },
   { colId: "page", headerName: "Page read by Leash", width: 165,
     valueGetter: p => p.data.status ? (p.data.page_verified ? "Yes" : "No") : "" },
+  { colId: "confirmed", headerName: "PayPal reported", width: 220,
+    valueGetter: p => (p.data.paypal_events || []).map(e => e.label).join(", "), tooltipValueGetter: p => p.value },
   { field: "order_id", headerName: "PayPal order", width: 190, hide: true },
   { field: "capture_id", headerName: "PayPal capture", width: 190, hide: true },
+  { field: "refund_id", headerName: "PayPal refund", width: 190, hide: true },
 ];
 
 const auditTheme = agGrid.themeQuartz.withParams({
@@ -105,7 +108,8 @@ function showDetail() {
     <div class="why">${why(p)}</div>
     <dl class="audit-facts">
       ${fact("Task", p.task)}${fact("Agent", p.agent)}${fact("Store", p.merchant)}${fact("Page", p.product_url)}
-      ${fact("PayPal order", p.order_id)}${fact("PayPal hold", p.authorization_id)}${fact("PayPal capture", p.capture_id)}
+      ${fact("PayPal order", p.order_id)}${fact("PayPal hold", p.authorization_id)}${fact("PayPal capture", p.capture_id)}${fact("PayPal refund", p.refund_id)}
+      ${fact("PayPal reported", (p.paypal_events || []).map(e => e.label).join(", "))}
     </dl>`);
 }
 
@@ -132,7 +136,7 @@ $("audit-chips").addEventListener("click", e => {
 $("audit-search").addEventListener("input", e => auditApi.setGridOption("quickFilterText", e.target.value));
 $("audit-ids").onclick = e => {
   idsShown = !idsShown;
-  auditApi.setColumnsVisible(["order_id", "capture_id"], idsShown);
+  auditApi.setColumnsVisible(["order_id", "capture_id", "refund_id"], idsShown);
   e.currentTarget.setAttribute("aria-pressed", idsShown);
   e.currentTarget.textContent = idsShown ? "Hide PayPal IDs" : "Show PayPal IDs";
 };

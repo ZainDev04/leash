@@ -9,8 +9,8 @@ async function api(path, opts = {}) {
   return r.json();
 }
 
-const statusColor = { paid: "var(--paid)", waiting: "var(--wait)", blocked: "var(--stop)", cancelled: "var(--stop)" };
-const statusWord = { paid: "Paid", waiting: "Waiting for you", blocked: "Stopped", cancelled: "Rejected", checking: "Checking", processing: "Working" };
+const statusColor = { paid: "var(--paid)", waiting: "var(--wait)", blocked: "var(--stop)", cancelled: "var(--stop)", refunded: "var(--wait)" };
+const statusWord = { paid: "Paid", waiting: "Waiting for you", blocked: "Stopped", cancelled: "Rejected", refunded: "Refunded", checking: "Checking", processing: "Working" };
 let reactTimer;
 function cardReact(p) {
   card.style.setProperty("--g", statusColor[p.status] || "var(--text-primary)");
@@ -79,7 +79,7 @@ function flow(p) {
   f.push(!held && p.status === "blocked" ? ["no", "Rules"] : ["ok", "Rules"]);
   f.push(held ? ["ok", "Held"] : ["", "Held"]);
   f.push(!held ? ["", "AI check"] : ai.length ? [p.status === "blocked" ? "no" : "warn", "AI check"] : ["ok", "AI check"]);
-  f.push({ paid: ["ok", "Paid"], waiting: ["warn", "Your call"], blocked: ["no", held ? "Hold released" : "Not charged"], cancelled: ["no", "Rejected"] }[p.status] || ["", p.status]);
+  f.push({ paid: ["ok", "Paid"], waiting: ["warn", "Your call"], blocked: ["no", held ? "Hold released" : "Not charged"], cancelled: ["no", "Rejected"], refunded: ["warn", "Refunded"] }[p.status] || ["", p.status]);
   return f.map(([c, t]) => `<div class="${c}"><span>${t}</span></div>`).join("");
 }
 function why(p) {
@@ -114,6 +114,7 @@ async function loadPayments() {
       ${p.status === "waiting" ? `<div class="acts">
         <button class="btn go sm" data-pay="${p.id}" data-action="approve">Approve and pay</button>
         <button class="btn sm" data-pay="${p.id}" data-action="reject">Reject</button></div>` : ""}
+      ${p.status === "paid" ? `<div class="acts"><button class="btn sm" data-pay="${p.id}" data-action="refund">Wrong item? Refund it</button></div>` : ""}
     </article>`).join(""));
   if (first) return;
   fresh.sort((a, b) => a.id - b.id).forEach((p, i) => setTimeout(() => {
@@ -123,13 +124,21 @@ async function loadPayments() {
 }
 
 async function decide(id, action, btn) {
-  btn.disabled = true; btn.innerHTML = `<span class="spin"></span>${action === "approve" ? "Paying" : "Releasing"}`;
+  btn.disabled = true; btn.innerHTML = `<span class="spin"></span>${{ approve: "Paying", reject: "Releasing", refund: "Refunding" }[action]}`;
   try { await api(`/payments/${id}/${action}`, { method: "POST" }); } catch (e) { toast("blocked", e.message); }
   refresh();
 }
 $("list").addEventListener("click", e => {
   const btn = e.target.closest("[data-pay]");
-  if (btn) decide(btn.dataset.pay, btn.dataset.action, btn);
+  if (!btn) return;
+  // A refund cannot be undone, so it takes a second click
+  if (btn.dataset.action === "refund" && !btn.dataset.armed) {
+    btn.dataset.armed = "1";
+    btn.textContent = "Click again to refund";
+    setTimeout(() => { if (btn.isConnected && !btn.disabled) { delete btn.dataset.armed; btn.textContent = "Wrong item? Refund it"; } }, 4000);
+    return;
+  }
+  decide(btn.dataset.pay, btn.dataset.action, btn);
 });
 $("logout").onclick = async () => {
   await fetch("/logout", { method: "POST" });

@@ -65,6 +65,12 @@ You need Python 3.11 or newer, a PayPal developer account and a Gemini API key.
 
    `agents/demo_shopper.py` is a scripted version that needs almost no quota. It makes four purchases: one is paid, one waits for your approval, one is blocked because the price went up, and one is blocked because the shop page hides instructions for AI agents.
 
+## Refunds and PayPal webhooks
+
+If an agent buys the wrong thing, press "Refund" on the payment. PayPal returns the money and the budget goes back up. Agents cannot refund, approve or change rules.
+
+PayPal also tells Leash what happened after each call, at `POST /paypal/webhook`. A refund or reversal made in PayPal, a denied payment, a hold released outside Leash or a removed saved account all update Leash, and removing the saved account stops agent payments straight away. Leash asks PayPal to confirm each event's signature before believing it, handles each event ID once, and leaves webhooks off when `PAYPAL_WEBHOOK_ID` is not set. To register a hosted site, run `python scripts/setup_webhook.py https://your-site.example` and set `PAYPAL_WEBHOOK_ID` to the ID it prints.
+
 ## Audit log
 
 The dashboard keeps every payment an agent tried in an [AG Grid](https://www.ag-grid.com/) table: what was asked for, what Leash decided, who decided it and why.

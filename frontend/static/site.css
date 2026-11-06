@@ -162,6 +162,7 @@ h2 { font-size: clamp(32px, 4vw, 52px); line-height: 1.08; letter-spacing: -.04e
 .badge { display: inline-block; margin-top: var(--s3); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: var(--s1) var(--s4); border-radius: 99px; }
 .badge.paid { color: var(--paid); background: color-mix(in srgb, var(--paid) 11%, transparent); }
 .badge.waiting { color: var(--wait); background: color-mix(in srgb, var(--wait) 14%, transparent); }
+.badge.refunded { color: var(--wait); background: color-mix(in srgb, var(--wait) 14%, transparent); }
 .badge.blocked, .badge.cancelled { color: var(--stop); background: color-mix(in srgb, var(--stop) 14%, transparent); }
 .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); margin: var(--s5) 0; }
 .flow div { height: 4px; border-radius: 4px; background: var(--surface-muted); position: relative; }

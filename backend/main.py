@@ -9,13 +9,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import ai, checks, db, pages, paypal, security, store
+from . import ai, checks, db, pages, paypal, security, store, webhooks
 from .security import require_agent, require_user, require_user_or_agent
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -360,7 +361,12 @@ def payments():
 @app.get("/audit", dependencies=[Depends(require_user)])
 def audit():
     clear_stuck_payments()
-    return db.audit_log()
+    rows = db.audit_log()
+    events = {}
+    for e in db.paypal_events():
+        events.setdefault(e["payment_id"], []).append(
+            {"label": webhooks.LABELS.get(e["event_type"], e["event_type"]), "received_at": e["received_at"]})
+    return [{**row, "paypal_events": events.get(row["id"], [])} for row in rows]
 
 
 @app.get("/audit", dependencies=[Depends(require_user)])
@@ -397,6 +403,54 @@ def reject(pid: int):
         db.update_payment(pid, status="waiting")
         raise HTTPException(502, "PayPal could not release the hold. It is still waiting, so you can try again.")
     return finish(pid, "cancelled", p["reasons"] + ["You rejected it. The hold was released."])
+
+
+@app.post("/payments/{pid}/refund", dependencies=[Depends(require_user)])
+def refund(pid: int):
+    p = db.payment(pid) or not_found()
+    # Only one click can win, so a double click cannot refund twice
+    if not db.move_status(pid, "paid", "processing"):
+        raise HTTPException(409, f"Payment is {db.payment(pid)['status']}, so it cannot be refunded.")
+    try:
+        refund_id = paypal.refund(p["capture_id"])
+    except Exception:
+        log.exception(f"refund failed for payment {pid}")
+        db.update_payment(pid, status="paid")
+        raise HTTPException(502, "PayPal could not refund this payment. It is still paid, so you can try again.")
+    db.update_payment(pid, refund_id=refund_id)
+    return finish(pid, "refunded", p["reasons"] + ["You refunded it. The money went back and your budget was restored."])
+
+
+# PayPal tells Leash what happened to a payment. Open to the internet, so nothing is believed until PayPal
+# confirms the signature.
+
+MAX_WEBHOOK_BYTES = 256_000
+
+
+@app.post("/paypal/webhook")
+async def paypal_webhook(request: Request):
+    security.limit(f"webhook:{security.client_ip(request)}", 120)
+    if not paypal.webhook_id():
+        raise HTTPException(503, "Webhooks are not set up on this server.")
+    raw = await request.body()
+    if len(raw) > MAX_WEBHOOK_BYTES:
+        raise HTTPException(413, "Too large.")
+    try:
+        text = raw.decode("utf-8")
+        event = json.loads(text)
+        if not isinstance(event, dict) or not event.get("id") or not event.get("event_type"):
+            raise ValueError
+    except ValueError:
+        raise HTTPException(400, "Not a PayPal event.")
+    try:
+        genuine = await run_in_threadpool(paypal.verify_webhook, request.headers, text)
+    except Exception:
+        log.exception("webhook signature check failed")
+        genuine = False
+    if not genuine:
+        raise HTTPException(400, "Signature not confirmed by PayPal.")
+    await run_in_threadpool(webhooks.handle, event)
+    return {"ok": True}
 
 
 def claim(pid):
