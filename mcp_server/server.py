@@ -127,7 +127,7 @@ def check_budget() -> dict:
         "frozen": s["frozen"],
         "paypal_saved": s["vault_saved"],
         "spent_this_month": s["spent_this_month"],
-        "left_this_month": max(rules["monthly_budget"] - s["spent_this_month"], 0),
+        "left_this_month": round(max(rules["monthly_budget"] - s["spent_this_month"], 0), 2),
         "monthly_budget": rules["monthly_budget"],
         "per_payment_limit": rules["per_payment_limit"],
         "asks_user_above": rules["ask_above"],
