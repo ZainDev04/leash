@@ -132,7 +132,7 @@ Open to anyone: `/` (home page), `/store` (demo store), `/login`, `/health`, `/r
 
 ## Deploy and scale
 
-`render.yaml` deploys the app and a Postgres database on Render (New > Blueprint). Paste your PayPal and Gemini keys, a dashboard password and `LEASH_AGENT_KEYS` when asked, then open the site and connect PayPal.
+`render.yaml` deploys the app on Render (New > Blueprint). Paste a Postgres address as `DATABASE_URL`, your PayPal and Gemini keys, a dashboard password and `LEASH_AGENT_KEYS` when asked, then open the site and connect PayPal. The live demo keeps its data on the Neon free plan, which does not expire. Use the direct address from Neon, not the pooled one.
 
 Sessions, rate limits and rules live in signed cookies or the database, so any copy of the server can answer any request. To run several copies behind Render's load balancer, use a paid plan and set `numInstances` in `render.yaml`. The load balancer stops sending traffic to a copy when its `/ready` check fails.
 
