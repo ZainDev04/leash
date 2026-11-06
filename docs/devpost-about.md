@@ -8,44 +8,52 @@ So we built Leash. The agent still does the shopping, but every payment has to p
 
 ## What it does
 
-You save your PayPal in Leash once. When an agent wants to buy something, it sends the item, price, shop page and the task you gave it to Leash. Then:
+You save your PayPal in Leash once. When an agent wants to buy something, it sends the item, price, shop page address and task to Leash, using its own key. Then:
 
-1. Plain code checks the payment against your rules: the per-payment limit, the monthly budget, allowed categories, allowed and blocked stores, currency, whether the price went up since the agent saw it, whether the same thing was bought in the last 10 minutes, and whether you hit the freeze button.
+1. Plain code checks the payment against your rules: per-payment limit, monthly budget, categories, stores, currency, repeat purchases and the freeze switch. Leash also reads the shop page itself and compares the price, seller, category and item with what the agent claimed.
 2. If it passes, Leash puts the money on hold in PayPal. Nothing is charged yet.
-3. Gemini reads the shop page and your task. It looks for hidden instructions and checks that the item fits what you asked for.
-4. Leash then charges the hold, keeps it and asks you, or cancels it.
+3. Gemini reads the page and your task, looking for hidden instructions and checking that the item fits what you asked for.
+4. Leash charges the hold, keeps it and asks you, or releases it.
 
-You set the rules by typing them normally, for example "never more than $80 at once, ask me above $40, only books and groceries". Gemini turns that into rules and shows you what it understood. Nothing is saved until you click yes.
+Payments that need you arrive on the dashboard and on your phone in Telegram, with Approve and Reject buttons. If an agent still buys the wrong thing, one button refunds it. PayPal webhooks tell Leash about anything that happens afterwards, and every decision goes into an audit log in AG Grid with filters, totals and CSV export.
 
-The AI can only make things stricter. If the code says no, the answer is no, whatever Gemini thinks. If Gemini or PayPal fails, the payment is blocked. A payment of amount $a$ can only go through when
+Any agent can use it. We tested a real Gemini agent we wrote and Claude Desktop connected through an MCP server. Neither can approve a payment, change the rules or lift the freeze, because those routes only accept a logged-in person.
 
-$$s_{\text{month}} + a \le B_{\text{month}} \quad\text{and}\quad a \le L_{\text{payment}} \quad\text{and}\quad a \le p_{\text{quoted}}$$
+You set the rules by typing them normally, for example "never more than $80 at once, ask me above $40, only books and groceries". Gemini shows you what it understood, and nothing is saved until you confirm.
 
-where $s$ is what you already spent this month, $B$ is your monthly budget, $L$ is your per-payment limit and $p$ is the price the agent was shown. Gemini is only asked after all of that passes.
+The AI can only make things stricter. If the code says no, the answer is no, whatever Gemini thinks. If Gemini or PayPal fails, nothing is paid. A payment of amount $a$ can only go through without asking you when
+
+$$s_{\text{month}} + a \le B_{\text{month}}, \quad a \le L_{\text{payment}}, \quad a \le p_{\text{quoted}}, \quad s_{\text{10 min}} + a \le L_{\text{ask}}$$
+
+where $s$ is what was already spent in that window, $B$ is your monthly budget, $L$ are your limits and $p$ is the price the agent was shown. The last rule stops agents from splitting one big purchase into small ones, even across different agents.
 
 ## How we built it
 
-The backend is Python with FastAPI, and SQLite stores the rules and every payment.
+The backend is Python with FastAPI, hosted on Render, with Postgres on Neon. Nothing depends on one server's memory, and a test runs two copies side by side to prove that the budget, repeat check, freeze and logins hold across both.
 
-For PayPal we use the sandbox with three pieces. Orders v2 with intent `AUTHORIZE` lets us hold the money while the checks run. Vault (`store_in_vault: ON_SUCCESS`) means the user approves once, and after that we create orders from the saved `vault_id` with no popup. Then we either capture the authorization or void it.
+All PayPal calls for orders and payments go through the official PayPal Server SDK, and we used the APIMatic context plugin while writing them. Orders v2 with intent `AUTHORIZE` holds the money while the checks run. Vault means the user approves once, and after that we create orders from the saved `vault_id` with no popup. Then we capture, void or refund. Webhooks are checked with PayPal's signature verification before Leash believes them, and each event is handled once.
 
-For AI we use Google Gemini (`gemini-3.5-flash`) with a JSON schema, so the answer always comes back in the same shape. It does two jobs: checking payments and reading rules written in plain English. The shop page goes inside `<page>` tags, and the prompt tells Gemini to treat it as data only.
+Gemini works with a JSON schema, so answers always come back in the same shape. It checks payments, reads plain-English rules and writes a weekly note about each agent. Code works out every number in that note. The shop page goes inside a tag with a random name for each check, so a page cannot know how to close it.
 
-The dashboard is a single HTML page. It shows your rules, how much you've spent, a freeze button, and every payment with the reasons behind it. Payments that need you have approve and reject buttons.
-
-For the demo we wrote a small agent that tries four purchases: a $24.99 book that fits the rules, a $64 box set over the "ask me" amount, a book whose price went from $19 to $29, and a book on a page with a hidden gift card instruction.
+The dashboard is plain HTML and JavaScript behind a login, with a strict content security policy. AG Grid Community draws the audit log.
 
 We built the hardest part first. Before writing any of the app, we wrote one script that saved a sandbox PayPal account and then paid from it without a click. We didn't want to find out on day 10 that Vault didn't work.
 
+## Attacking our own project
+
+We wrote `agents/red_team.py`, which attacks Leash with real Gemini and the real PayPal sandbox: hidden instructions, fake approvals, fake discounts, store and item swaps, split purchases, guessed keys and agents trying to approve their own payments. Two normal purchases run alongside, so a Leash that blocked everything would fail.
+
+The first run stopped 22 of 23 attacks. One page wrote its own message saying the safety review had finished. Gemini believed it, and the payment went through with sandbox money. That was the most useful result of the whole project. Plain code now looks for text aimed at the check before the AI sees the page. The latest run stopped 24 of 24, with both normal purchases paid. Gemini's answers can vary between runs, so anyone can run it again and see.
+
 ## Challenges we ran into
 
-PayPal isn't available in Pakistan, where we live. The PayPal app wouldn't install, and we couldn't open a developer account ourselves. We asked in the PayPal Developer Discord, and they said to work with someone in a country where PayPal is available. We used a developer account from a friend abroad to get sandbox access.
+PayPal isn't available in Pakistan, where we live. The PayPal app wouldn't install, and we couldn't open a developer account ourselves. We asked in the PayPal Developer Discord, and they said to work with someone in a country where PayPal is available. We used a family member's developer account abroad to get sandbox access.
 
 Vault surprised us. When you create an order from a saved `vault_id` with intent `AUTHORIZE`, it comes back already authorized. Our script called authorize again and got `ORDER_ALREADY_AUTHORIZED`. Now we read the authorization from the create response.
 
-Gemini was too slow at first. The model we started with took over 60 seconds per answer, so every test payment timed out. Leash blocked all of them, which was the right behavior, but it made the app useless. We timed a few models and moved to one that answers in about 2 seconds.
+Testing with real agents found bugs that our tests missed. Claude sent a short store path where Leash expected a full address, so a normal purchase waited for approval. Leash did the safe thing, and we fixed the tool. Free hosting caused trouble too: Render's free database is deleted after 30 days, before judging ends, so we moved to Neon.
 
-We also argued about how much the AI should decide. Letting the model handle everything would have been less code. We kept the money limits in normal code anyway, because a $100 limit shouldn't depend on how a model reads a prompt.
+We also argued about how much the AI should decide. Letting the model handle everything would have been less code. We kept the money limits in normal code anyway, because a $100 limit shouldn't depend on how a model reads a prompt, and our own attack run proved that a model can be talked into things.
 
 ## What we learned
 
@@ -53,4 +61,4 @@ Authorizing and capturing are two separate steps, and the gap between them is ex
 
 ## What's next
 
-We want to add an MCP server so agents like Claude Desktop can pay through Leash directly, replace the scripted demo with a real AI shopping agent, and host Leash on Render so judges can try it without installing anything.
+Reading real shops, since Leash only verifies pages from stores on its list today. Letting one account hold many users. Moving from the sandbox to live payments with PayPal's review.
