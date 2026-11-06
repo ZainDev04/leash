@@ -1,39 +1,48 @@
-# Demo video script (target 2:45, hard limit 3:00)
+# Demo video script (target 2:50, hard limit 3:00)
+
+Everything is recorded on the live site, https://leash-b2xx.onrender.com.
 
 ## Before recording
 
-1. Clear old test payments so the ledger starts empty (keeps the saved PayPal and your rules). Stop the server first, then from `leash/`:
-   ```
-   .venv/Scripts/python -c "import sqlite3; c=sqlite3.connect('backend/leash.db'); c.execute('DELETE FROM payments'); c.commit()"
-   .venv/Scripts/uvicorn backend.main:app --port 8000
-   ```
-2. Open http://localhost:8000 in Chrome, light theme, zoom 100%, close other tabs. Hide the bookmarks bar.
-3. Open a terminal next to it, in `leash/`, with this command typed but not run:
-   `.venv/Scripts/python agents/demo_shopper.py`
-4. In a second Chrome tab, log in to https://www.sandbox.paypal.com with the sandbox Business account (to show the money arriving at the end).
-5. Record with Windows Game Bar (Win + G, then the record button) or OBS. Use your own voice, no music (copyrighted music is not allowed).
+1. Open the live site a minute early, because the free service sleeps when idle.
+2. Start with empty history (optional but cleaner). In the Neon console, open the SQL Editor and run `DELETE FROM paypal_events; DELETE FROM payments;`. This keeps the saved PayPal, the rules and the Telegram link. Do this again before every retake, because the repeat and split-purchase checks look at the last 10 minutes.
+3. Set the rules: "Never more than $80 at once. Ask me above $40. $200 a month. Only books and groceries."
+4. Lay out the screen: Chrome with the dashboard on the left, a terminal on the right with this typed but not run (set `LEASH_URL` and `LEASH_SHOPPER_KEY` first):
+   `.venv/Scripts/python agents/shopper.py "Buy me a beginner Python book under 30 dollars"`
+5. Have Claude Desktop ready with Leash connected, and Telegram open (https://web.telegram.org shows up best on screen, or film your phone).
+6. Check the Gemini quota has not run out today. One agent purchase uses about nine calls.
+7. Record with your own voice and no music. Copyrighted music is not allowed.
 
 ## Script
 
-| Time | Screen | Say |
-|---|---|---|
-| 0:00 | Dashboard top, card visible | "AI agents can shop for us now. The scary part is letting them pay. Give an agent your PayPal, and it can spend anything, or be tricked by a web page into buying something you never asked for." |
-| 0:15 | Move the mouse over the card | "This is Leash. Your agents pay with your PayPal, but only inside your rules. You connect PayPal once using PayPal Vault, so the agent can pay later without a popup." |
-| 0:30 | Scroll to "Four checks" | "Every payment goes through four steps. Hard rules in code. Then the money is put on hold with a PayPal authorization. Then Gemini reads the shop page for tricks. Then Leash captures the payment, asks you, or releases the hold." |
-| 0:50 | Rules panel, type: "Never more than $80 at once. Ask me above $40. Only books and groceries." Click Read my rules | "I set my rules in plain English. Gemini turns them into rules and shows me what it understood. Nothing changes until I confirm." |
-| 1:10 | Click Use these rules | "Confirmed." |
-| 1:15 | Scroll to top, run the demo agent in the terminal | "Now a shopping agent gets a task: buy me a beginner Python book under 30 dollars. Watch the card." |
-| 1:25 | First payment arrives, card glows green | "A 25 dollar book. It passes my rules, the hold is placed, the AI finds nothing wrong, and PayPal captures it. Paid, no click needed." |
-| 1:40 | Second payment, card glows amber | "A 64 dollar box set. It's over my 40 dollar limit for asking, and the AI points out it's over the task's budget. Leash holds the money and waits for me." |
-| 1:55 | Third payment, card shakes red | "Here the price jumped from 19 to 29 dollars at checkout. The code catches it before PayPal is even called." |
-| 2:05 | Fourth payment, scroll to its card and point at the AI reason | "And this shop page has hidden text telling AI agents to also buy a 90 dollar gift card. A person would never see it. Gemini does, and Leash cancels the hold." |
-| 2:20 | Click Approve and pay on the waiting payment | "Back to the box set. I decide it's fine and approve it. Leash captures the held money." |
-| 2:30 | Switch to the sandbox PayPal tab, refresh the activity list | "And here it is in the PayPal sandbox: real authorizations, captures and voids." |
-| 2:38 | Back to Leash, flip the Kill switch | "If something ever feels wrong, one switch freezes every agent payment." |
-| 2:45 | Dashboard | "The AI can only make a decision stricter, never approve what your rules refuse, and if anything fails, nothing is paid. That's Leash. Code is on GitHub." |
+0:00, dashboard top with the agent card. "AI agents can shop for us now. The scary part is letting them pay. An agent with your PayPal can spend anything, or be tricked by a web page into buying something you never asked for."
+
+0:15, move over the card. "This is Leash. Your agents pay with your PayPal, inside your rules. You connect PayPal once with PayPal Vault, and agents can pay later with no popup, and without ever holding your PayPal details."
+
+0:28, scroll to the four checks. "Every payment goes through four steps. Hard rules in plain code. A PayPal authorization puts the money on hold. Gemini reads the shop page for tricks. Then Leash captures, asks you, or releases the hold."
+
+0:45, rules panel. "My rules are in plain English. Gemini shows me what it understood, and nothing changes until I confirm."
+
+0:55, run the Gemini agent in the terminal. "This is a real Gemini agent, nothing scripted. I ask it for a beginner Python book. It gets no warning about what comes next."
+
+1:05, the first payment appears as stopped, open its reason. "It picked a book whose page hides text telling AI agents to also buy a 90 dollar gift card. No person would see it. Gemini did, and the hold was released."
+
+1:20, the second payment appears as paid. "The agent chose another book. It passed everything, so PayPal captured it with no click from me."
+
+1:30, Claude Desktop: "Use Leash to buy me an intermediate Python book from the demo store." "Any agent can use Leash. This is Claude, connected through MCP."
+
+1:45, Telegram message arrives. "This purchase is under my 40 dollar limit by itself, but together with the last one it is over. Agents cannot get around my limit by splitting purchases. So the money is on hold, and my phone asks me." Tap Approve and pay.
+
+2:00, dashboard, press Wrong item, Refund it, click again. "If an agent still buys the wrong thing, one button refunds it. PayPal's own webhook confirms what happened, and my budget comes back."
+
+2:12, scroll to the audit log, filter by agent, open a row. "Every decision is on record in AG Grid: who decided, why, and what PayPal reported, with totals that follow my filters." Press Summarize my agents. "Gemini writes the weekly note. Code does the math."
+
+2:28, show docs/red-team-results.md on GitHub. "We attacked Leash ourselves with 24 attacks. In the first run, one page wrote its own 'safety review finished' message, fooled the AI, and got paid. So we fixed it, in code. Now all 24 are stopped and normal purchases still go through. The AI is one layer, and it can only make decisions stricter."
+
+2:45, flip the kill switch, or send /freeze in Telegram. "And one switch stops every agent. That's Leash. It's live and the code is on GitHub."
 
 ## Notes
 
-- Payments take about 7 to 11 seconds each (PayPal plus Gemini). Keep talking while they arrive, or cut the waits when editing (Clipchamp, built into Windows, is enough).
-- If you run the demo twice within 10 minutes, the duplicate check blocks the repeats. Clear the payments again before a retake.
-- Upload to YouTube as Public, title "Leash: AI agents pay with PayPal, inside your rules", then paste the link into Devpost.
+- Payments take about 7 to 11 seconds. Keep talking, or cut the waits when editing (Clipchamp is built into Windows).
+- Gemini's wording changes from run to run, so read what is on screen and do not promise exact words.
+- Upload to YouTube as Public, on a channel in your or the project's name, then paste the link into Devpost.
