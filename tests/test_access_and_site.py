@@ -223,7 +223,7 @@ def test_unknown_page(client):
 def test_text_responses_are_compressed(client):
     r = client.get("/static/site.css", headers={"Accept-Encoding": "gzip"})
     assert r.headers.get("content-encoding") == "gzip"
-    assert "max-age" in r.headers["cache-control"]
+    assert r.headers["cache-control"] == "no-cache"
 
 
 def test_load_balancer_checks(client, monkeypatch):
