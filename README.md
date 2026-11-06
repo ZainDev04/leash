@@ -69,7 +69,7 @@ You need Python 3.11 or newer, a PayPal developer account and a Gemini API key.
 
 Payments that need you arrive on your phone with Approve and Reject buttons, and you get a note when Leash stops one. Send `/freeze` to stop all agent payments and `/status` to see your spending. The freeze can be lifted only from the dashboard.
 
-To turn it on, make a bot with @BotFather, set `TELEGRAM_BOT_TOKEN`, then press Connect Telegram on the dashboard. That makes a one-time link that lasts 10 minutes. Only the linked chat can press buttons or send commands, Telegram proves each update with a secret, and the buttons run the same code as the dashboard, so a double tap pays once. A Telegram outage never changes what happens to a payment.
+To turn it on, make a bot with @BotFather, set `TELEGRAM_BOT_TOKEN`, then press Connect Telegram on the dashboard. That shows a QR code and a command, both one-time and good for 10 minutes. Only the linked chat can press buttons or send commands, Telegram proves each update with a secret, and the buttons run the same code as the dashboard, so a double tap pays once. A Telegram outage never changes what happens to a payment.
 
 ## Weekly spending summary
 

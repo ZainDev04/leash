@@ -102,8 +102,16 @@
       <div class="vault"><span>PayPal account</span><b id="vault">...</b></div>
       <div class="tg" id="tg" hidden>
         <div class="vault"><span>Telegram approvals</span><b id="tg-state">...</b></div>
-        <p class="hint" id="tg-hint" hidden>Open the link and press Start. It works once and lasts 10 minutes.</p>
-        <a class="btn sm" id="tg-open" target="_blank" rel="noopener noreferrer" hidden>Open Telegram</a>
+        <div class="tg-pair" id="tg-pair" hidden>
+          <p class="hint">Scan this with your phone's camera and press Start in Telegram. It works once and lasts 10 minutes.</p>
+          <div class="tg-qr" id="tg-qr"></div>
+          <p class="hint">Or send this to <b id="tg-bot"></b> in Telegram:</p>
+          <code class="tg-cmd" id="tg-cmd"></code>
+          <div class="acts" style="margin-top:0">
+            <button class="btn sm" id="tg-copy">Copy</button>
+            <a class="btn sm" id="tg-open" target="_blank" rel="noopener noreferrer">Telegram on this computer</a>
+          </div>
+        </div>
         <button class="btn sm" id="tg-link">Connect Telegram</button>
       </div>
     </aside>
@@ -139,6 +147,7 @@
 <div class="toasts" id="toasts"></div>
 
 <script src="/static/site.js"></script>
+<script src="/static/vendor/qrcode-generator-1.4.4.js"></script>
 <script src="/static/dashboard.js"></script>
 <script src="/static/vendor/ag-grid-community-36.3.0.min.js"></script>
 <script src="/static/audit.js"></script>

@@ -226,6 +226,11 @@ textarea:focus { outline: none; border-color: var(--text-primary); }
 
 .tg { margin-top: var(--s4); }
 .tg .btn { margin-top: var(--s3); }
+.tg-pair { margin-top: var(--s3); }
+/* Scanners need dark squares on white in both themes */
+.tg-qr { width: 196px; max-width: 100%; margin: var(--s3) 0; padding: 8px; background: #fff; border-radius: 10px; }
+.tg-qr svg { display: block; width: 100%; height: auto; }
+.tg-cmd { display: block; padding: var(--s3); font-size: var(--fs-xs); background: var(--surface-muted); border-radius: 8px; overflow-wrap: anywhere; user-select: all; }
 .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: rot .8s linear infinite; }
 @keyframes rot { to { transform: rotate(360deg); } }
 

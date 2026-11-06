@@ -171,18 +171,29 @@ async function loadTelegram() {
   tgLinked = t.linked;
   $("tg-state").textContent = t.linked ? "Connected" : "Not connected";
   $("tg-link").textContent = t.linked ? "Disconnect Telegram" : "Connect Telegram";
-  if (t.linked) { $("tg-open").hidden = true; $("tg-hint").hidden = true; }
+  if (t.linked) $("tg-pair").hidden = true;
 }
 $("tg-link").onclick = async () => {
   try {
     if (tgLinked) {
       await api("/telegram/unlink", { method: "POST" });
     } else {
-      $("tg-open").href = (await api("/telegram/link", { method: "POST" })).url;
-      $("tg-open").hidden = false; $("tg-hint").hidden = false;
+      const url = new URL((await api("/telegram/link", { method: "POST" })).url);
+      const qr = qrcode(0, "M");
+      qr.addData(url.href);
+      qr.make();
+      $("tg-qr").innerHTML = qr.createSvgTag({ scalable: true, margin: 2 });
+      $("tg-open").href = url.href;
+      $("tg-bot").textContent = "@" + url.pathname.slice(1);
+      $("tg-cmd").textContent = "/start " + url.searchParams.get("start");
+      $("tg-pair").hidden = false;
     }
     loadTelegram();
   } catch (e) { toast("blocked", e.message); }
+};
+$("tg-copy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("tg-cmd").textContent); toast("paid", "Copied. Send it to the bot in Telegram."); }
+  catch { toast("blocked", "Could not copy. Select the text and copy it yourself."); }
 };
 loadTelegram().catch(() => {});
 setInterval(() => { if (!document.hidden) loadTelegram().catch(() => {}); }, 5000);
