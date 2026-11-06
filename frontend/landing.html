@@ -104,7 +104,7 @@
   <section class="band" id="connect">
     <div class="sec-title">
       <div><div class="eyebrow">Connect an agent</div><h2>Add Leash to Claude<br>with one command.</h2></div>
-      <p>Leash ships an MCP server with three tools: pay, check_budget and check_payment. Other agents can call the HTTP API with an API key.</p>
+      <p>Leash ships an MCP server with tools to read a shop page, pay and check the budget. Other agents can call the HTTP API with an API key.</p>
     </div>
     <pre class="code"><code>claude mcp add leash -e LEASH_API_KEY=your-agent-key -- /path/to/leash/.venv/Scripts/python /path/to/leash/mcp_server/server.py</code></pre>
     <p class="note">Setup steps for Claude Code and Claude Desktop are in the <a href="https://github.com/ZainDev04/leash#readme" rel="noopener">README</a>.</p>
@@ -120,6 +120,7 @@
     <details><summary>Does Leash move real money?</summary><p>No. Leash runs on the PayPal sandbox, which uses test accounts. It is a working prototype built for the PayPal AI Hackathon 2026.</p></details>
     <details><summary>Can an agent approve its own payment?</summary><p>No. An agent holds an API key that only reaches the pay and read endpoints. Approving, changing rules and lifting the freeze need the dashboard login.</p></details>
     <details><summary>What happens if the AI or PayPal fails?</summary><p>The payment is blocked and nothing is taken. The AI can only make a decision stricter, so it can never approve something your rules refuse.</p></details>
+    <details><summary>Can Leash catch an agent that lies?</summary><p>For stores on your verified list, Leash reads the page itself and compares the price and seller with what the agent claims. A payment without a page Leash could read waits for you. Try it on the <a href="/store">demo store</a>.</p></details>
     <details><summary>Which agents can use it?</summary><p>Any MCP client, such as Claude Code, or any program that can send an HTTP request with an API key.</p></details>
   </section>
 </main>

@@ -12,6 +12,7 @@ os.environ["PUBLIC_URL"] = "https://leash.example"
 os.environ["PAYPAL_CLIENT_ID"] = "unused"
 os.environ["PAYPAL_CLIENT_SECRET"] = "unused"
 os.environ["LLM_API_KEY"] = "unused"
+os.environ["LEASH_VERIFIED_STORES"] = ""
 
 import pytest
 from fastapi.testclient import TestClient

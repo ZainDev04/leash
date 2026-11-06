@@ -105,7 +105,7 @@ async function loadPayments() {
   setHTML($("list"), list.map(p => `
     <article class="pay ${esc(p.status)} ${!first && freshIds.has(p.id) ? "enter" : ""}">
       <div class="pay-head">
-        <div><div class="pay-item">${esc(p.item)}</div><div class="pay-meta">${esc(p.merchant)} &middot; ${esc(p.agent)} &middot; #${p.id}</div></div>
+        <div><div class="pay-item">${esc(p.item)}</div><div class="pay-meta">${esc(p.merchant)} &middot; ${esc(p.agent)} &middot; #${p.id}${p.page_verified ? " &middot; page read by Leash" : ""}</div></div>
         <div><div class="pay-amt num">${money(p.amount)}</div><span class="badge ${esc(p.status)}">${statusWord[p.status] || esc(p.status)}</span></div>
       </div>
       <div class="flow">${flow(p)}</div>

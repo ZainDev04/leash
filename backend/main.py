@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import ai, checks, db, paypal, security
+from . import ai, checks, db, pages, paypal, security, store
 from .security import require_agent, require_user, require_user_or_agent
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -71,6 +71,7 @@ async def around_every_request(request: Request, call_next):
     return response
 
 
+app.include_router(store.router)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.mount("/static", StaticFiles(directory=FRONTEND / "static"), name="static")
 
@@ -96,6 +97,7 @@ class PayRequest(BaseModel):
     quoted_price: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     task: str = Field(min_length=1, max_length=2000)
     page_text: str = Field(default="", max_length=100_000)
+    product_url: str | None = Field(default=None, max_length=2000)
 
     @field_validator("merchant", "item", "category", "task")
     @classmethod
@@ -281,7 +283,10 @@ def pay(body: PayRequest, agent: str = Depends(require_agent)):
     # The row goes in first. Each payment then counts every earlier one, so payments
     # sent at the same moment cannot all see the same unspent budget.
     pid = db.add_payment({**req, "status": "checking", "reasons": "[]"})
-    decision, reasons = checks.run(req, db.get("policy"), pid)
+    # Read the page before anything else, so every later step uses what the shop really shows
+    req["page_text"], read_by_leash, page_block, page_ask = pages.inspect(req)
+    db.update_payment(pid, page_text=req["page_text"], page_verified=int(read_by_leash))
+    decision, reasons = checks.run(req, db.get("policy"), pid, page_block, page_ask)
 
     if decision == "block":
         return finish(pid, "blocked", reasons)

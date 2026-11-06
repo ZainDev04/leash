@@ -37,13 +37,19 @@ def init():
             amount REAL, quoted_price REAL, currency TEXT,
             task TEXT, page_text TEXT,
             status TEXT, reasons TEXT,
-            order_id TEXT, authorization_id TEXT, capture_id TEXT
+            order_id TEXT, authorization_id TEXT, capture_id TEXT,
+            product_url TEXT, page_verified INTEGER DEFAULT 0
         );
         CREATE TABLE IF NOT EXISTS rate_limits (
             key TEXT, window INTEGER, hits INTEGER,
             PRIMARY KEY (key, window)
         );
         """)
+    with conn() as c:
+        columns = [row["name"] for row in c.execute("PRAGMA table_info(payments)")]
+        if "product_url" not in columns:
+            c.execute("ALTER TABLE payments ADD COLUMN product_url TEXT")
+            c.execute("ALTER TABLE payments ADD COLUMN page_verified INTEGER DEFAULT 0")
     if get("policy") is None:
         put("policy", DEFAULT_POLICY)
     if get("frozen") is None:

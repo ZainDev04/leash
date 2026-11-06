@@ -2,9 +2,9 @@
 from . import db
 
 
-def run(req, policy, pid):
-    """Returns (decision, reasons). decision is 'block', 'ask' or 'ok'. pid is this payment's own row."""
-    block, ask = [], []
+def run(req, policy, pid, page_block=(), page_ask=()):
+    """Returns (decision, reasons). decision is 'block', 'ask' or 'ok'. pid is this payment's own row. page_block and page_ask come from reading the shop page."""
+    block, ask = list(page_block), list(page_ask)
     merchant = req["merchant"].lower()
     amount = req["amount"]
 
