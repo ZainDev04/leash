@@ -141,7 +141,8 @@ async function loadAudit() {
 function safeForSpreadsheet(p) {
   if (p.value instanceof Date) {
     const d = p.value, two = n => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`;
+    // Excel shows a real date in a narrow column as #####, so "at" keeps this as text. It still sorts in time order.
+    return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} at ${two(d.getHours())}:${two(d.getMinutes())}`;
   }
   return typeof p.value === "string" && /^[=+\-@\t\r]/.test(p.value) ? "'" + p.value : p.value;
 }
