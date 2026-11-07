@@ -7,6 +7,14 @@ let auditGroup = "all", idsShown = false;
 
 const toDate = text => text ? new Date(text.replace(" ", "T") + "Z") : null;
 const moneyOrBlank = p => p.value == null ? "" : money(p.value);
+// Numbers and dates open newest or biggest first. A click only ever flips the order, so the arrow never vanishes.
+const biggestFirst = ["desc", "asc"];
+// The date filter hands over midnight, so compare the day and ignore the time of the payment
+const sameDayCompare = (day, cell) => {
+  if (!cell) return -1;
+  const cellDay = new Date(cell.getFullYear(), cell.getMonth(), cell.getDate());
+  return cellDay < day ? -1 : cellDay > day ? 1 : 0;
+};
 
 function decidedBy(p) {
   if (!p.reasons) return "";
@@ -22,13 +30,14 @@ function priceChange(p) {
 const readableReasons = p => (p.reasons || []).map(r => r.replace(/^AI( ok)?:\s*/, "")).reverse().join(" ");
 
 const auditColumns = [
-  { field: "id", headerName: "#", width: 80, minWidth: 70, filter: "agNumberColumnFilter", sort: "desc" },
-  { colId: "when", headerName: "When (your time)", width: 170, filter: "agDateColumnFilter",
+  { field: "id", headerName: "#", width: 96, minWidth: 90, filter: "agNumberColumnFilter", sort: "desc", sortingOrder: biggestFirst },
+  { colId: "when", headerName: "When (your time)", width: 210, filter: "agDateColumnFilter", sortingOrder: biggestFirst,
+    filterParams: { comparator: sameDayCompare },
     valueGetter: p => toDate(p.data.created_at),
     valueFormatter: p => p.value ? p.value.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "" },
-  { field: "agent", headerName: "Agent", width: 130 },
-  { field: "item", headerName: "Item", width: 230, tooltipField: "item" },
-  { field: "amount", headerName: "Amount", width: 105, type: "rightAligned", filter: "agNumberColumnFilter", valueFormatter: moneyOrBlank },
+  { field: "agent", headerName: "Agent", width: 150 },
+  { field: "item", headerName: "Item", width: 285, tooltipField: "item" },
+  { field: "amount", headerName: "Amount", width: 110, type: "rightAligned", filter: "agNumberColumnFilter", sortingOrder: biggestFirst, valueFormatter: moneyOrBlank },
   { colId: "result", headerName: "Result", width: 140,
     valueGetter: p => p.data.status ? (statusWord[p.data.status] || p.data.status) : "",
     cellClassRules: {
@@ -40,8 +49,8 @@ const auditColumns = [
   { colId: "reasons", headerName: "Reasons", flex: 1, minWidth: 300, valueGetter: p => readableReasons(p.data), tooltipValueGetter: p => p.value },
   { field: "merchant", headerName: "Store", width: 130 },
   { field: "category", headerName: "Category", width: 120 },
-  { field: "quoted_price", headerName: "Quoted", width: 105, type: "rightAligned", filter: "agNumberColumnFilter", valueFormatter: moneyOrBlank },
-  { colId: "change", headerName: "Price change", width: 125, type: "rightAligned", filter: "agNumberColumnFilter",
+  { field: "quoted_price", headerName: "Quoted", width: 110, type: "rightAligned", filter: "agNumberColumnFilter", sortingOrder: biggestFirst, valueFormatter: moneyOrBlank },
+  { colId: "change", headerName: "Price change", width: 125, type: "rightAligned", filter: "agNumberColumnFilter", sortingOrder: biggestFirst,
     valueGetter: p => priceChange(p.data),
     valueFormatter: p => p.value == null ? "" : (p.value > 0 ? "+" : "-") + money(Math.abs(p.value)),
     cellClassRules: { "cell-stopped": p => p.value > 0 } },
@@ -73,22 +82,23 @@ const auditTheme = agGrid.themeQuartz.withParams({
 const auditApi = agGrid.createGrid($("audit-grid"), {
   theme: auditTheme,
   columnDefs: auditColumns,
-  defaultColDef: { sortable: true, resizable: true, filter: true, floatingFilter: true, minWidth: 90 },
+  defaultColDef: { sortable: true, sortingOrder: ["asc", "desc"], resizable: true, filter: true, floatingFilter: true, minWidth: 90 },
   rowData: [],
   getRowId: p => p.data.id == null ? "total" : String(p.data.id),
   domLayout: "autoHeight",
   pagination: true,
   paginationPageSize: 20,
   paginationPageSizeSelector: [20, 50, 100],
-  rowSelection: { mode: "singleRow", checkboxes: false, enableClickSelection: true },
+  rowSelection: { mode: "singleRow", checkboxes: false, enableClickSelection: true, enableSelectionWithoutKeys: true },
   enableCellTextSelection: true,
   ensureDomOrder: true,
   includeHiddenColumnsInQuickFilter: true,
   tooltipShowDelay: 300,
-  overlayNoRowsTemplate: "<span>No payments match this view.</span>",
+  localeText: { noRowsToShow: "No payments yet.", noMatchingRows: "No payments match this view." },
   isExternalFilterPresent: () => auditGroup !== "all",
   doesExternalFilterPass: node => inGroup[auditGroup](node.data.status),
   onSelectionChanged: showDetail,
+  onFilterChanged: dropFilteredSelection,
   onModelUpdated: updateTotal,
 });
 
@@ -97,6 +107,13 @@ function updateTotal(event) {
   let paid = 0;
   event.api.forEachNodeAfterFilter(n => { if (n.data && n.data.status === "paid") paid += n.data.amount; });
   event.api.setGridOption("pinnedBottomRowData", [{ item: "Total paid in this view", amount: Math.round(paid * 100) / 100 }]);
+}
+
+// Do not leave the details of a row on screen after a filter has hidden that row
+function dropFilteredSelection(event) {
+  const shown = new Set();
+  event.api.forEachNodeAfterFilter(n => shown.add(n));
+  event.api.getSelectedNodes().forEach(n => { if (!shown.has(n)) n.setSelected(false); });
 }
 
 function showDetail() {
@@ -122,7 +139,10 @@ async function loadAudit() {
 
 // A spreadsheet runs a cell starting with one of these as a formula, and agents and shops choose some of this text
 function safeForSpreadsheet(p) {
-  if (p.value instanceof Date) return p.value.toISOString();
+  if (p.value instanceof Date) {
+    const d = p.value, two = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`;
+  }
   return typeof p.value === "string" && /^[=+\-@\t\r]/.test(p.value) ? "'" + p.value : p.value;
 }
 
