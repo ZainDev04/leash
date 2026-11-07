@@ -64,6 +64,10 @@ async function loadStatus() {
   }
   $("vault").textContent = s.vault_saved ? "Connected" : "Not connected";
   $("vault-text").textContent = s.vault_saved ? "Reconnect PayPal" : "Connect PayPal";
+  // Once connected, payments are the main thing to look at
+  $("vault-btn").classList.toggle("solid", !s.vault_saved);
+  $("see-payments").classList.toggle("solid", s.vault_saved);
+  $("see-payments").style.order = s.vault_saved ? -1 : 0;
   const budget = s.policy.monthly_budget || 1, used = Math.min(1, s.spent_this_month / budget);
   countTo($("spent"), s.spent_this_month, money);
   countTo($("left"), Math.max(0, budget - s.spent_this_month), money);
