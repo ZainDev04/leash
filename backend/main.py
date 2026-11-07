@@ -394,12 +394,6 @@ def audit():
     return [{**row, "paypal_events": events.get(row["id"], [])} for row in rows]
 
 
-@app.get("/audit", dependencies=[Depends(require_user)])
-def audit():
-    clear_stuck_payments()
-    return db.audit_log()
-
-
 @app.get("/payments/{pid}", dependencies=[Depends(require_user_or_agent)])
 def payment(pid: int):
     return db.payment(pid) or not_found()

@@ -11,6 +11,7 @@ $("login").addEventListener("submit", async e => {
     });
     if (r.ok) { location.href = "/app"; return; }
     $("error").textContent = (await r.json().catch(() => ({}))).detail || "Could not log in.";
+    $("password").select();
   } catch {
     $("error").textContent = "Could not reach the server.";
   }

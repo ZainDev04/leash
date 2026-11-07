@@ -99,7 +99,7 @@ async function loadPayments() {
   list.forEach(p => seen.add(p.id + p.status));
   const n = s => list.filter(p => p.status === s).length;
   countTo($("n-paid"), n("paid")); countTo($("n-wait"), n("waiting")); countTo($("n-stop"), n("blocked") + n("cancelled"));
-  $("total").textContent = list.length ? `${list.length} payments` : "";
+  $("total").textContent = list.length ? `${list.length} ${list.length === 1 ? "payment" : "payments"}` : "";
   if (!list.length) return;
   const freshIds = new Set(fresh.map(p => p.id));
   setHTML($("list"), list.map(p => `
@@ -125,7 +125,11 @@ async function loadPayments() {
 
 async function decide(id, action, btn) {
   btn.disabled = true; btn.innerHTML = `<span class="spin"></span>${{ approve: "Paying", reject: "Releasing", refund: "Refunding" }[action]}`;
-  try { await api(`/payments/${id}/${action}`, { method: "POST" }); } catch (e) { toast("blocked", e.message); }
+  try { await api(`/payments/${id}/${action}`, { method: "POST" }); }
+  catch (e) {
+    toast("blocked", e.message);
+    delete $("list").dataset.html; // Draw the list again so the button does not stay stuck on its spinner
+  }
   refresh();
 }
 $("list").addEventListener("click", e => {
@@ -145,9 +149,19 @@ $("logout").onclick = async () => {
   location.href = "/";
 };
 $("freeze").onclick = async () => {
-  await api(frozen ? "/unfreeze" : "/freeze", { method: "POST" });
-  toast(frozen ? "paid" : "blocked", frozen ? "Agents can pay again." : "All agent payments frozen.");
-  refresh();
+  const btn = $("freeze"), freezing = !frozen;
+  btn.disabled = true;
+  try {
+    await api(freezing ? "/freeze" : "/unfreeze", { method: "POST" });
+    toast(freezing ? "blocked" : "paid", freezing ? "All agent payments frozen." : "Agents can pay again.");
+    // The card shows the switch right away, not the last payment
+    clearTimeout(reactTimer);
+    card.classList.remove("react");
+    await loadStatus();
+  } catch (e) {
+    toast("blocked", `The kill switch did not change, so agents are still ${frozen ? "frozen" : "allowed to pay"}. ${e.message}`);
+  }
+  btn.disabled = false;
 };
 $("parse").onclick = async () => {
   const text = $("rules-text").value.trim(); if (!text) { $("rules-text").focus(); return; }
@@ -159,23 +173,41 @@ $("parse").onclick = async () => {
   btn.disabled = false; btn.textContent = "Read my rules";
 };
 $("confirm").onclick = async () => {
-  await api("/policy", { method: "PUT", body: JSON.stringify(draft) });
-  $("draft").hidden = true; $("rules-text").value = ""; toast("paid", "Rules saved. Every new payment uses them."); refresh();
+  const btn = $("confirm");
+  btn.disabled = true;
+  try {
+    await api("/policy", { method: "PUT", body: JSON.stringify(draft) });
+    $("draft").hidden = true; $("rules-text").value = ""; toast("paid", "Rules saved. Every new payment uses them."); refresh();
+  } catch (e) { toast("blocked", "Your rules were not saved: " + e.message); }
+  btn.disabled = false;
 };
 $("discard").onclick = () => { $("draft").hidden = true; draft = null; };
 
-let tgLinked = false;
+let tgLinked = false, tgArmed = false, tgTimer;
+function tgLabel() {
+  if (tgLinked) return tgArmed ? "Click again to disconnect" : "Disconnect Telegram";
+  return $("tg-pair").hidden ? "Connect Telegram" : "Make a new code";
+}
 async function loadTelegram() {
   const t = await api("/telegram");
   $("tg").hidden = !t.available;
   tgLinked = t.linked;
   $("tg-state").textContent = t.linked ? "Connected" : "Not connected";
-  $("tg-link").textContent = t.linked ? "Disconnect Telegram" : "Connect Telegram";
   if (t.linked) $("tg-pair").hidden = true;
+  $("tg-link").textContent = tgLabel();
 }
 $("tg-link").onclick = async () => {
   try {
     if (tgLinked) {
+      // Disconnecting stops approvals on the phone, so it takes a second click
+      if (!tgArmed) {
+        tgArmed = true;
+        $("tg-link").textContent = tgLabel();
+        tgTimer = setTimeout(() => { tgArmed = false; $("tg-link").textContent = tgLabel(); }, 4000);
+        return;
+      }
+      clearTimeout(tgTimer);
+      tgArmed = false;
       await api("/telegram/unlink", { method: "POST" });
     } else {
       const url = new URL((await api("/telegram/link", { method: "POST" })).url);
