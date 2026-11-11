@@ -309,6 +309,13 @@ def pay(body: PayRequest, agent: str = Depends(require_agent)):
     except Exception as e:
         verdict = {"verdict": "block", "hidden_instructions": True,
                    "reason": f"AI check failed, so Leash blocked it to be safe ({type(e).__name__})."}
+    # The yes/no answers win over a verdict that contradicts them
+    if verdict.get("hidden_instructions") and verdict["verdict"] != "block":
+        verdict = {**verdict, "verdict": "block",
+                   "reason": "The AI found hidden instructions on the page. " + verdict["reason"]}
+    elif verdict.get("item_matches_task") is False and verdict["verdict"] == "ok":
+        verdict = {**verdict, "verdict": "ask",
+                   "reason": "The AI flagged that the item may not fit the task. " + verdict["reason"]}
     # The AI blocks outright only for manipulation; anything else it dislikes goes to the user
     if verdict["verdict"] == "block" and not verdict.get("hidden_instructions"):
         verdict["verdict"] = "ask"

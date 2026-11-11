@@ -137,6 +137,22 @@ def test_other_ai_doubts_go_to_the_user(client, fake, monkeypatch):
     assert buy(client, item="Other").json()["status"] == "waiting"
 
 
+def test_ok_with_hidden_instructions_is_blocked(client, fake, monkeypatch):
+    verdict(monkeypatch, verdict="ok", hidden_instructions=True, item_matches_task=True)
+    r = buy(client).json()
+    assert r["status"] == "blocked"
+    assert any("hidden instructions" in x for x in r["reasons"])
+    assert fake.voids == ["auth-1"] and fake.captures == []
+
+
+def test_ok_with_wrong_item_asks_the_user(client, fake, monkeypatch):
+    verdict(monkeypatch, verdict="ok", item_matches_task=False)
+    r = buy(client).json()
+    assert r["status"] == "waiting"
+    assert any("may not fit the task" in x for x in r["reasons"])
+    assert fake.captures == []
+
+
 def test_ai_failure_blocks(client, fake, monkeypatch):
     def broken(req):
         raise TimeoutError

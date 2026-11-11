@@ -15,6 +15,7 @@ The AI can only make a decision stricter. It can never approve something the cod
 Built for the PayPal AI Hackathon 2026. PayPal sandbox only, no real money.
 
 - Live demo: https://leash-b2xx.onrender.com (the first request after a quiet spell can take about a minute)
+- Judges: the dashboard password is in our Devpost testing instructions.
 - Demo video: https://youtu.be/iqKs0nRcSy8
 
 ## How it fits together
