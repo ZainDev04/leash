@@ -280,7 +280,9 @@ textarea:focus { outline: none; border-color: var(--text-primary); box-shadow: 0
   .stat:nth-child(odd) { border-left: 0; padding-left: 0; }
   .stat:nth-child(4) { border-left: 1px solid var(--line); padding-left: var(--s4); }
   .pay-head { flex-direction: column; } .pay-amt { text-align: left; }
-  .ac-in { padding: 20px; } .ac-limit b { font-size: var(--fs-3xl); } .chip { margin-top: 14px; width: 42px; height: 32px; }
+  /* Less depth and tilt on phones, so the text does not slide toward the left edge */
+  .agent-card { --ry: -9deg; --rx: 6deg; }
+  .ac-in { padding: 22px 24px; transform: translateZ(12px); } .ac-limit b { font-size: var(--fs-3xl); } .chip { margin-top: 14px; width: 42px; height: 32px; }
 }
 @media (max-width: 380px) {
   header #theme { display: none; }
