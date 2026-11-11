@@ -111,7 +111,7 @@ h1 em { font-style: normal; font-weight: 300; color: var(--text-secondary); }
 .agent-card.react .glow { opacity: 1; }
 .agent-card.shake { animation: shake .5s var(--ease), float 6s ease-in-out infinite; }
 @keyframes shake { 20%,60% { translate: -8px 0; } 40%,80% { translate: 8px 0; } }
-.ac-in { position: absolute; inset: 0; padding: 28px 30px; display: flex; flex-direction: column; transform: translateZ(40px); }
+.ac-in { position: absolute; inset: 0; padding: 28px 34px; display: flex; flex-direction: column; transform: translateZ(16px); }
 .ac-row { display: flex; justify-content: space-between; align-items: center; }
 .ac-brand { font-weight: 700; font-size: var(--fs-2xl); letter-spacing: -.03em; }
 .ac-brand span { color: #d6c3a1; }
@@ -259,7 +259,11 @@ textarea:focus { outline: none; border-color: var(--text-primary); box-shadow: 0
   .stat:nth-child(4) { border-left: 0; padding-left: 0; }
   .side { position: static; }
   .nav-links { display: none; }
+  /* Gentler resting tilt on tablets and phones, so the text keeps an even margin */
+  .agent-card { --ry: -9deg; --rx: 6deg; }
 }
+/* Large touch screens have no pointer to tilt the card either */
+@media (pointer: coarse) { .agent-card { --ry: -9deg; --rx: 6deg; } }
 @media (max-width: 600px) {
   .wrap { padding: 0 16px; }
   header .wrap { gap: var(--s4); }
@@ -280,8 +284,6 @@ textarea:focus { outline: none; border-color: var(--text-primary); box-shadow: 0
   .stat:nth-child(odd) { border-left: 0; padding-left: 0; }
   .stat:nth-child(4) { border-left: 1px solid var(--line); padding-left: var(--s4); }
   .pay-head { flex-direction: column; } .pay-amt { text-align: left; }
-  /* Less depth and tilt on phones, so the text does not slide toward the left edge */
-  .agent-card { --ry: -9deg; --rx: 6deg; }
   .ac-in { padding: 22px 24px; transform: translateZ(12px); } .ac-limit b { font-size: var(--fs-3xl); } .chip { margin-top: 14px; width: 42px; height: 32px; }
 }
 @media (max-width: 380px) {
